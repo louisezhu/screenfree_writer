@@ -27,6 +27,16 @@
 		B77D89B02D833C4F005D2209 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89AB2D833C4F005D2209 /* CloudKitService.swift */; };
 		B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AC2D833C4F005D2209 /* Assets.xcassets */; };
 		B77D89B22D833C4F005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AD2D833C4F005D2209 /* Preview Content */; };
+		B77D89BA2D834658005D2209 /* DeepseekService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B32D834658005D2209 /* DeepseekService.swift */; };
+		B77D89BB2D834658005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89B42D834658005D2209 /* Preview Content */; };
+		B77D89BC2D834658005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89B52D834658005D2209 /* Assets.xcassets */; };
+		B77D89BD2D834658005D2209 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */; };
+		B77D89BE2D834658005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */; };
+		B77D89C62D834CE0005D2209 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */; };
+		B77D89C72D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */; };
+		B77D89C82D834CE0005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89C32D834CE0005D2209 /* Assets.xcassets */; };
+		B77D89C92D834CE0005D2209 /* SyncStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */; };
+		B77D89CA2D834CE0005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89C52D834CE0005D2209 /* Preview Content */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +79,16 @@
 		B77D89AB2D833C4F005D2209 /* CloudKitService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
 		B77D89AC2D833C4F005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B77D89AD2D833C4F005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		B77D89B32D834658005D2209 /* DeepseekService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepseekService.swift; sourceTree = "<group>"; };
+		B77D89B42D834658005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		B77D89B52D834658005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B77D89B72D834658005D2209 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
+		B77D89B92D834658005D2209 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
+		B77D89C02D834CDF005D2209 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
+		B77D89C22D834CE0005D2209 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
+		B77D89C32D834CE0005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncStatusManager.swift; sourceTree = "<group>"; };
+		B77D89C52D834CE0005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		B7D465822D832B140042B162 /* screenfree_writer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = screenfree_writer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465992D832B170042B162 /* screenfree_writerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465A32D832B170042B162 /* screenfree_writerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -125,8 +145,18 @@
 				B77D89AC2D833C4F005D2209 /* Assets.xcassets */,
 				B77D89AB2D833C4F005D2209 /* CloudKitService.swift */,
 				B77D89AD2D833C4F005D2209 /* Preview Content */,
+				B77D89C32D834CE0005D2209 /* Assets.xcassets */,
+				B77D89C52D834CE0005D2209 /* Preview Content */,
 				B77D89A92D833C4F005D2209 /* screenfree_writer.xcdatamodeld */,
 				B77D89A72D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld */,
+				B77D89B52D834658005D2209 /* Assets.xcassets */,
+				B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */,
+				B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */,
+				B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */,
+				B77D89B32D834658005D2209 /* DeepseekService.swift */,
+				B77D89B42D834658005D2209 /* Preview Content */,
+				B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */,
+				B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C642A2D83300000BB5561 /* BookViewModel.swift */,
 				B75C64302D83300000BB5561 /* ChapterEditView.swift */,
 				B75C64232D832FFF00BB5561 /* ContentView.swift */,
@@ -251,9 +281,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B77D89BB2D834658005D2209 /* Preview Content in Resources */,
 				B77D89B22D833C4F005D2209 /* Preview Content in Resources */,
+				B77D89CA2D834CE0005D2209 /* Preview Content in Resources */,
 				B75C643E2D83300000BB5561 /* Assets.xcassets in Resources */,
 				B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */,
+				B77D89C82D834CE0005D2209 /* Assets.xcassets in Resources */,
+				B77D89BC2D834658005D2209 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,16 +314,22 @@
 			files = (
 				B77D89B02D833C4F005D2209 /* CloudKitService.swift in Sources */,
 				B75C64432D83300000BB5561 /* ChapterEditView.swift in Sources */,
+				B77D89C72D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B75C643A2D83300000BB5561 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B75C64372D83300000BB5561 /* Persistence.swift in Sources */,
 				B75C64422D83300000BB5561 /* screenfree_writerApp.swift in Sources */,
+				B77D89BA2D834658005D2209 /* DeepseekService.swift in Sources */,
+				B77D89BD2D834658005D2209 /* screenfree_writer.xcdatamodeld in Sources */,
 				B77D89AF2D833C4F005D2209 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64362D83300000BB5561 /* CoreDataManager.swift in Sources */,
 				B75C643C2D83300000BB5561 /* Models.swift in Sources */,
 				B75C64462D83300000BB5561 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64392D83300000BB5561 /* ProfileView.swift in Sources */,
+				B77D89BE2D834658005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
+				B77D89C62D834CE0005D2209 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64442D83300000BB5561 /* WritingView.swift in Sources */,
 				B75C643D2D83300000BB5561 /* BookViewModel.swift in Sources */,
+				B77D89C92D834CE0005D2209 /* SyncStatusManager.swift in Sources */,
 				B75C64382D83300000BB5561 /* ContentView.swift in Sources */,
 				B75C643B2D83300000BB5561 /* NewChapterView.swift in Sources */,
 				B77D89AE2D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
@@ -452,6 +492,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "screenfree_writer/Preview\\ Content";
+				DEVELOPMENT_TEAM = WY5GH5H745;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = screenfree_writer/Info.plist;
@@ -491,6 +532,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "screenfree_writer/Preview\\ Content";
+				DEVELOPMENT_TEAM = WY5GH5H745;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = screenfree_writer/Info.plist;
@@ -684,6 +726,46 @@
 			);
 			currentVersion = B77D89AA2D833C4F005D2209 /* screenfree_writer.xcdatamodel */;
 			path = screenfree_writer.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B77D89B72D834658005D2209 /* screenfree_writer.xcdatamodel */,
+			);
+			currentVersion = B77D89B72D834658005D2209 /* screenfree_writer.xcdatamodel */;
+			path = screenfree_writer.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B77D89B92D834658005D2209 /* ScreenFreeWriter.xcdatamodel */,
+			);
+			currentVersion = B77D89B92D834658005D2209 /* ScreenFreeWriter.xcdatamodel */;
+			path = ScreenFreeWriter.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B77D89C02D834CDF005D2209 /* screenfree_writer.xcdatamodel */,
+			);
+			currentVersion = B77D89C02D834CDF005D2209 /* screenfree_writer.xcdatamodel */;
+			path = screenfree_writer.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B77D89C22D834CE0005D2209 /* ScreenFreeWriter.xcdatamodel */,
+			);
+			currentVersion = B77D89C22D834CE0005D2209 /* ScreenFreeWriter.xcdatamodel */;
+			path = ScreenFreeWriter.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

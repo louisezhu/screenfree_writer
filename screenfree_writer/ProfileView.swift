@@ -28,7 +28,7 @@ struct ProfileView: View {
                                 .padding(.horizontal)
                             
                             VStack(spacing: 8) {
-                                StatRow(title: "总字数", value: "0", icon: "textformat.123")
+                                StatRow(title: "总字数", value: "0", icon: "chart.bar.fill")
                                 StatRow(title: "总章节数", value: "0", icon: "list.bullet")
                                 StatRow(title: "总书籍数", value: "0", icon: "book.closed.fill")
                             }

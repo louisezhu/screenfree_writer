@@ -17,51 +17,55 @@ struct WritingView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack {
-                // 顶部工具栏
-                HStack {
-                    Text("我的书籍")
-                        .font(.title)
-                        .bold()
-                    
-                    Spacer()
-                    
-                    Menu {
-                        Button(action: { showingNewBookSheet = true }) {
-                            Label("新建书籍", systemImage: "plus")
-                        }
-                        
-                        Menu("排序方式") {
-                            ForEach(SortOption.allCases, id: \.self) { option in
-                                Button(action: { sortOption = option }) {
-                                    Label(option.rawValue, systemImage: option == sortOption ? "checkmark" : "")
+                if viewModel.books.isEmpty {
+                    ContentUnavailableView("还没有书籍", systemImage: "book.closed")
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 20) {
+                            ForEach(viewModel.books) { book in
+                                NavigationLink(destination: BookDetailView(book: book)) {
+                                    BookCard(book: book)
                                 }
                             }
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.title2)
+                        .padding()
                     }
                 }
-                .padding()
-                
-                // 书籍网格
-                ScrollView {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16)
-                    ], spacing: 16) {
-                        ForEach(viewModel.books) { book in
-                            BookCard(book: book)
-                        }
+            }
+            .navigationTitle("我的书籍")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showingNewBookSheet = true
+                    }) {
+                        Image(systemName: "plus")
                     }
-                    .padding()
                 }
             }
             .sheet(isPresented: $showingNewBookSheet) {
                 NewBookView(viewModel: viewModel)
             }
+            .alert("iCloud 同步错误", isPresented: $viewModel.showICloudAlert) {
+                Button("确定") {
+                    viewModel.showICloudAlert = false
+                }
+                
+                Button("打开设置") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } message: {
+                Text(viewModel.iCloudErrorMessage ?? "无法连接到 iCloud。请检查您的 iCloud 账户设置。")
+            }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }
 
@@ -69,50 +73,87 @@ struct BookCard: View {
     let book: BookEntity
     @StateObject private var viewModel = BookViewModel()
     @State private var isSyncing = false
+    @State private var lastSyncTime: Date? = nil
     
     var body: some View {
-        NavigationLink(destination: BookDetailView(book: book)) {
-            VStack {
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(.blue)
-                    .frame(width: 80, height: 80)
-                    .background(Color.blue.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                Text(book.title ?? "未命名")
-                    .font(.headline)
-                    .lineLimit(1)
-                
-                Text("\(totalWordCount) 字")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading) {
+            AspectRatio(3/4) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.blue.opacity(0.2))
+                    .overlay(
+                        Image(systemName: "book")
+                            .font(.largeTitle)
+                            .foregroundColor(.blue)
+                    )
             }
-            .padding()
-            .background(backgroundColor)
-            .cornerRadius(16)
-            .shadow(radius: 2)
-            .contextMenu {
-                Button(action: {
-                    Task {
-                        isSyncing = true
-                        do {
-                            try await CloudKitService.shared.syncBook(book)
-                        } catch {
-                            print("Error syncing book: \(error)")
-                        }
-                        isSyncing = false
+            
+            Text(book.title ?? "无标题")
+                .font(.headline)
+                .lineLimit(1)
+            
+            Text("章节: \(book.chapters?.count ?? 0)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            HStack {
+                Text("上次同步时间： \(book.updatedAt?.formatted(.dateTime.month().day().year()) ?? "未同步")")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                if let syncTime = lastSyncTime {
+                    HStack(spacing: 2) {
+                        Image(systemName: "checkmark.icloud")
+                            .font(.caption2)
+                        Text(syncTime.formatted(.dateTime.hour().minute()))
+                            .font(.caption2)
                     }
-                }) {
+                    .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+        .contextMenu {
+            Button(action: {
+                if viewModel.iCloudStatus != .available {
+                    viewModel.iCloudErrorMessage = "您需要登录 iCloud 账户才能同步。请在设置中登录 iCloud 账户。"
+                    viewModel.showICloudAlert = true
+                    return
+                }
+                
+                isSyncing = true
+                Task {
+                    do {
+                        try await viewModel.syncBookToCloud(book)
+                        // 同步成功后更新显示的同步时间
+                        lastSyncTime = Date()
+                    } catch {
+                        print("Error syncing book to cloud: \(error)")
+                    }
+                    isSyncing = false
+                }
+            }) {
+                if isSyncing {
+                    ProgressView()
+                } else {
                     Label("同步到云端", systemImage: "arrow.triangle.2.circlepath")
                 }
-                .disabled(isSyncing)
-                
-                Button(role: .destructive, action: {
-                    viewModel.deleteBook(book)
-                }) {
-                    Label("删除书籍", systemImage: "trash")
-                }
+            }
+            .disabled(isSyncing || viewModel.iCloudStatus != .available)
+            
+            Button(role: .destructive, action: {
+                viewModel.deleteBook(book)
+            }) {
+                Label("删除书籍", systemImage: "trash")
+            }
+        }
+        .onAppear {
+            // 加载上次同步时间
+            if let bookId = book.id {
+                lastSyncTime = SyncStatusManager.shared.getLastSyncTime(for: bookId)
             }
         }
     }
@@ -128,6 +169,21 @@ struct BookCard: View {
         #else
         return Color(UIColor.systemBackground)
         #endif
+    }
+    
+    struct AspectRatio<Content: View>: View {
+        private let ratio: CGFloat
+        private let content: Content
+        
+        init(_ ratio: CGFloat, @ViewBuilder content: () -> Content) {
+            self.ratio = ratio
+            self.content = content()
+        }
+        
+        var body: some View {
+            content
+                .aspectRatio(ratio, contentMode: .fit)
+        }
     }
 }
 

@@ -12,8 +12,8 @@ struct BookDetailView: View {
             // 统计信息部分
             Section {
                 HStack {
-                    StatCard(title: "总字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
                     StatCard(title: "章节数", value: "\(book.chapters?.count ?? 0)", icon: "list.bullet")
+                    StatCard(title: "总字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
                 }
             }
             
