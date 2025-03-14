@@ -5,33 +5,102 @@ struct BookDetailView: View {
     @State private var showingNewChapterSheet = false
     @State private var selectedChapter: ChapterEntity?
     @State private var showingChapterOptions = false
+    @State private var showingEditBookSheet = false
+    @State private var editingBookTitle: String = ""
+    @State private var showingDeleteAlert = false
+    @Environment(\.dismiss) private var dismiss
     let book: BookEntity
     
     var body: some View {
-        List {
-            // 统计信息部分
-            Section {
-                HStack {
-                    StatCard(title: "章节数", value: "\(book.chapters?.count ?? 0)", icon: "list.bullet")
-                    StatCard(title: "总字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
-                }
-                
-                // 添加时间信息部分
-                HStack {
-                    if let createdAt = book.createdAt {
-                        StatCard(title: "创建时间", value: formattedDate(createdAt), icon: "calendar.badge.plus")
+        ZStack {
+            // 背景
+            AppTheme.background.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // 书籍信息头部
+                VStack(spacing: 16) {
+                    // 书籍封面
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: AppTheme.primary.opacity(0.3), radius: 10, x: 0, y: 4)
+                        
+                        Text(book.title?.prefix(1).uppercased() ?? "A")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     
-                    if let updatedAt = book.updatedAt {
-                        StatCard(title: "更新时间", value: formattedDate(updatedAt), icon: "arrow.triangle.2.circlepath")
-                    }
+                    Text(book.title ?? "未命名")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppTheme.text)
                 }
-            }
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+                
+                // 统计信息卡片
+                VStack(spacing: 16) {
+                    // 统计指标
+                    HStack(spacing: 20) {
+                        StatisticView(title: "章节", value: "\(book.chapters?.count ?? 0)", icon: "list.bullet")
+                        
+                        Divider()
+                            .frame(height: 40)
+                        
+                        StatisticView(title: "字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
+                        
+                        Divider()
+                            .frame(height: 40)
+                        
+                        StatisticView(title: "页数", value: "\(estimatedPages)", icon: "book")
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+                    
+                    // 时间信息
+                    HStack(spacing: 20) {
+                        if let createdAt = book.createdAt {
+                            TimeInfoView(title: "创建于", value: formattedDate(createdAt), icon: "calendar.badge.plus")
+                        }
+                        
+                        Spacer()
+                        
+                        if let updatedAt = book.updatedAt {
+                            TimeInfoView(title: "更新于", value: formattedDate(updatedAt), icon: "arrow.triangle.2.circlepath")
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.horizontal)
+                
+                // 章节列表
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("章节列表")
+                        .font(.headline)
+                        .foregroundColor(AppTheme.text)
+                        .padding(.horizontal)
+                        .padding(.top, 16)
             
             // 章节列表
-            Section("章节列表") {
-                ForEach(book.chapters?.allObjects as? [ChapterEntity] ?? []) { chapter in
+                    if let chapters = book.chapters?.allObjects as? [ChapterEntity], !chapters.isEmpty {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(chapters) { chapter in
                     ChapterRow(chapter: chapter)
+                                        .background(AppTheme.cardBackground)
+                                        .cornerRadius(12)
+                                        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+                                        .padding(.horizontal)
                         .contextMenu {
                             Button(action: {}) {
                                 Label("重命名", systemImage: "pencil")
@@ -43,23 +112,109 @@ struct BookDetailView: View {
                             }
                         }
                 }
+                            }
+                            .padding(.bottom, 100) // 留出底部空间给FAB
+                        }
+                    } else {
+                        // 空状态
+                        VStack(spacing: 16) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 48))
+                                .foregroundColor(AppTheme.secondary.opacity(0.5))
+                            
+                            Text("还没有章节")
+                                .font(.headline)
+                                .foregroundColor(AppTheme.secondaryText)
+                            
+                            Text("点击右下角的+按钮创建第一个章节")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(AppTheme.background)
+                .cornerRadius(24, corners: [.topLeft, .topRight])
+                .padding(.top, 16)
             }
         }
-        .navigationTitle(book.title ?? "未命名")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
                 Button(action: { showingNewChapterSheet = true }) {
-                    Image(systemName: "plus")
+                        Label("新建章节", systemImage: "plus")
+                    }
+                    
+                    Button(action: {
+                        // 只设置标题
+                        editingBookTitle = book.title ?? ""
+                        showingEditBookSheet = true
+                    }) {
+                        Label("编辑书籍", systemImage: "pencil")
+                    }
+                    
+                    Button(role: .destructive, action: {
+                        showingDeleteAlert = true
+                    }) {
+                        Label("删除书籍", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundColor(AppTheme.primary)
                 }
             }
         }
+        .overlay(
+            // 悬浮添加按钮
+            Button(action: { showingNewChapterSheet = true }) {
+                Image(systemName: "plus")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: AppTheme.primary.opacity(0.4), radius: 10, x: 0, y: 5)
+            }
+            .padding(20),
+            alignment: .bottomTrailing
+        )
         .sheet(isPresented: $showingNewChapterSheet) {
             NewChapterView(book: book, viewModel: viewModel)
+        }
+        .sheet(isPresented: $showingEditBookSheet) {
+            EditBookView(book: book, bookTitle: $editingBookTitle, viewModel: viewModel)
+        }
+        .alert("确定删除此书籍？", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                viewModel.deleteBook(book)
+                dismiss()
+            }
+        } message: {
+            Text("此操作不可撤销，书籍中的所有章节将被永久删除。")
         }
     }
     
     private var totalWordCount: Int {
         book.chapters?.reduce(0) { $0 + (($1 as? ChapterEntity)?.content?.count ?? 0) } ?? 0
+    }
+    
+    private var estimatedPages: Int {
+        // 假设每页约1000字
+        let pages = (totalWordCount + 999) / 1000
+        return max(1, pages)
     }
     
     // 辅助函数：格式化日期
@@ -70,30 +225,70 @@ struct BookDetailView: View {
     }
 }
 
-struct StatCard: View {
+// 扩展视图，支持单独设置某些角的圆角
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
+
+// 统计数据视图组件
+struct StatisticView: View {
     let title: String
     let value: String
     let icon: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .foregroundColor(.secondary)
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(AppTheme.primary)
             
             Text(value)
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.bold)
+                .foregroundColor(AppTheme.text)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(AppTheme.secondaryText)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(radius: 2)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// 时间信息视图组件
+struct TimeInfoView: View {
+    let title: String
+    let value: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(AppTheme.primary)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption2)
+                    .foregroundColor(AppTheme.secondaryText)
+                
+                Text(value)
+                    .font(.caption)
+                    .foregroundColor(AppTheme.text)
+            }
+        }
     }
 }
 
@@ -103,16 +298,138 @@ struct ChapterRow: View {
     var body: some View {
         NavigationLink(destination: ChapterEditView(chapter: chapter)) {
             HStack {
+                // 左侧图标和标题
+                HStack(spacing: 12) {
+                    // 章节图标
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.primary.opacity(0.1))
+                            .frame(width: 40, height: 40)
+                        
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 16))
+                            .foregroundColor(AppTheme.primary)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
                 Text(chapter.title ?? "未命名")
                     .font(.body)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppTheme.text)
+                        
+                        // 最后更新时间
+                        if let updatedAt = chapter.updatedAt {
+                            Text("更新于 \(formatDate(updatedAt))")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
+                    }
+                }
                 
                 Spacer()
                 
+                // 右侧字数和指示器
+                HStack(spacing: 8) {
                 Text("\(chapter.content?.count ?? 0) 字")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                        .foregroundColor(AppTheme.secondaryText)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(AppTheme.secondaryText)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // 格式化日期
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
+// 编辑书籍视图（简化版，移除description相关内容）
+struct EditBookView: View {
+    @Environment(\.dismiss) private var dismiss
+    let book: BookEntity
+    @Binding var bookTitle: String
+    @ObservedObject var viewModel: BookViewModel
+    @FocusState private var isTitleFocused: Bool
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                // 背景色
+                AppTheme.background.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // 基本信息部分
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "book")
+                                    .foregroundColor(AppTheme.primary)
+                            }
+                            .padding(.horizontal)
+                            
+                            VStack(alignment: .leading, spacing: 20) {
+                                // 书籍名称
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("书籍名称")
+                                        .font(.subheadline)
+                                        .foregroundColor(AppTheme.secondaryText)
+                                    
+                                    TextField("请输入书籍名称", text: $bookTitle)
+                                        .focused($isTitleFocused)
+                                        .textInputAutocapitalization(.never)
+                                        .padding(12)
+                                        .background(AppTheme.cardBackground)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(AppTheme.secondary.opacity(0.3), lineWidth: 1)
+                                        )
+                                }
+                            }
+                            .padding()
+                            .background(AppTheme.cardBackground)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.vertical, 20)
+                }
+            }
+            .navigationTitle("编辑书籍")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                    .foregroundColor(AppTheme.secondaryText)
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        // 更新书籍，不使用description
+                        viewModel.updateBook(book, title: bookTitle, description: "")
+                        dismiss()
+                    }
+                    .foregroundColor(bookTitle.isEmpty ? AppTheme.secondaryText.opacity(0.5) : AppTheme.primary)
+                    .disabled(bookTitle.isEmpty)
+                }
+            }
+            .onAppear {
+                isTitleFocused = true
             }
         }
+        .frame(minWidth: 400, minHeight: 200)
     }
 }
 

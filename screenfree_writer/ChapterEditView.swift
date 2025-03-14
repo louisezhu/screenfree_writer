@@ -242,58 +242,91 @@ struct ChapterEditView: View {
                 }
                 
                 // 编辑器
-                ScrollView {
-                    CustomTextEditor(text: $content, selectedRange: $selectedRange, suggestions: suggestions)
-                        .frame(minHeight: 200)
-                        .focused($isEditing)
-                        .textInputAutocapitalization(.never)
-                        .onChange(of: content) { newValue in
-                            // 更新章节内容和更新时间
-                            chapter.updatedAt = Date()
-                            viewModel.updateChapter(chapter, content: newValue)
-                            if !searchText.isEmpty {
-                                findMatches()
-                            }
-                        
-                            previousContentLength = newValue.count
+                ZStack(alignment: .topTrailing) {
+                    ScrollView {
+                        CustomTextEditor(text: $content, selectedRange: $selectedRange, suggestions: suggestions)
+                            .frame(minHeight: 200)
+                            .focused($isEditing)
+                            .textInputAutocapitalization(.never)
+                            .onChange(of: content) { newValue in
+                                // 更新章节内容和更新时间
+                                chapter.updatedAt = Date()
+                        viewModel.updateChapter(chapter, content: newValue)
+                                if !searchText.isEmpty {
+                                    findMatches()
+                                }
                             
-                            // 取消之前的延迟检测任务
-                            checkTextTask?.cancel()
-                            isTyping = true
-                            
-                            // 检查是否刚刚输入了标点符号
-                            let justEnteredPunctuation = didJustEnterPunctuation(in: newValue)
-                            
-                            // 创建新的延迟检测任务
-                            checkTextTask = Task {
-                                // 根据是否输入标点符号决定延迟时间
-                                // 如果刚输入标点符号，我们可以立即检查或稍微等待一下
-                                let delayTime = justEnteredPunctuation ? 500_000_000 : 1_000_000_000 // 0.5秒或1秒
-                                try? await Task.sleep(nanoseconds: UInt64(delayTime))
-                                isTyping = false
+                                previousContentLength = newValue.count
                                 
-                                if !Task.isCancelled {
-                                    await checkText()
+                                // 取消之前的延迟检测任务
+                                checkTextTask?.cancel()
+                                isTyping = true
+                                
+                                // 检查是否刚刚输入了标点符号
+                                let justEnteredPunctuation = didJustEnterPunctuation(in: newValue)
+                                
+                                // 创建新的延迟检测任务
+                                checkTextTask = Task {
+                                    // 根据是否输入标点符号决定延迟时间
+                                    // 如果刚输入标点符号，我们可以立即检查或稍微等待一下
+                                    let delayTime = justEnteredPunctuation ? 500_000_000 : 1_000_000_000 // 0.5秒或1秒
+                                    try? await Task.sleep(nanoseconds: UInt64(delayTime))
+                                    isTyping = false
+                                    
+                                    if !Task.isCancelled {
+                                        await checkText()
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                    }
+                    .background(AppTheme.background)
+                    
+                    // 添加一个小指示器，显示当前检查状态或建议数量
+                    if isChecking || !suggestions.isEmpty {
+                        Button(action: { showingSidebar.toggle() }) {
+                            HStack(spacing: 4) {
+                                if isChecking {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                } else {
+                                    Text("\(suggestions.count)")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Image(systemName: "checkmark.bubble.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(suggestions.isEmpty ? AppTheme.secondary : AppTheme.accent)
+                            )
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
-                        .padding()
+                        .padding(12)
+                    }
                 }
                 
                 // 底部工具栏
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(content.count)字")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppTheme.secondaryText)
                             .font(.caption)
                         
                         // 添加创建时间和更新时间
                         if let createdAt = chapter.createdAt, let updatedAt = chapter.updatedAt {
                             Text("创建: \(formattedDate(createdAt))")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.secondaryText)
                                 .font(.caption2)
                             Text("更新: \(formattedDate(updatedAt))")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.secondaryText)
                                 .font(.caption2)
                         }
                     }
@@ -305,7 +338,7 @@ struct ChapterEditView: View {
                             undoManager?.undo()
                         }) {
                             Image(systemName: "arrow.uturn.backward")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.secondaryText)
                         }
                         .disabled(!(undoManager?.canUndo ?? false))
                         
@@ -313,23 +346,23 @@ struct ChapterEditView: View {
                             undoManager?.redo()
                         }) {
                             Image(systemName: "arrow.uturn.forward")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.secondaryText)
                         }
                         .disabled(!(undoManager?.canRedo ?? false))
                         
                         Button(action: { showingSearch.toggle() }) {
                             Image(systemName: "magnifyingglass")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.secondaryText)
                         }
-                        
-                        Button(action: { showingSidebar.toggle() }) {
+                    
+                    Button(action: { showingSidebar.toggle() }) {
                             Image(systemName: "checkmark.bubble")
-                                .foregroundColor(!suggestions.isEmpty ? .blue : .green)
+                                .foregroundColor(!suggestions.isEmpty ? AppTheme.accent : AppTheme.primary)
                         }
                     }
                 }
                 .padding()
-                .background(Color(.systemBackground))
+                .background(AppTheme.cardBackground)
                 .shadow(radius: 1)
             }
             
@@ -344,7 +377,7 @@ struct ChapterEditView: View {
                     currentTextIsPerfect: currentTextIsPerfect
                 )
                 .frame(width: 300)
-                .background(Color(.systemBackground))
+                .background(AppTheme.cardBackground)
                 .overlay(
                     Rectangle()
                         .fill(Color(.systemGray4))
@@ -355,6 +388,7 @@ struct ChapterEditView: View {
         }
         .navigationTitle(chapter.title ?? "未命名")
         .navigationBarTitleDisplayMode(.inline)
+        .background(AppTheme.background)
         .onAppear {
             content = chapter.content ?? ""
             previousContentLength = content.count
@@ -691,9 +725,11 @@ struct SidebarView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // 标题栏
             HStack {
-                Text("修改建议")
-                    .font(.headline)
+            Text("修改建议")
+                .font(.headline)
+                    .foregroundColor(AppTheme.text)
                 Spacer()
                 
                 // 添加重置检查记录的按钮
@@ -701,7 +737,7 @@ struct SidebarView: View {
                     checkedParagraphs.removeAll()
                 }) {
                     Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppTheme.primary)
                         .font(.system(size: 14))
                 }
                 .buttonStyle(BorderlessButtonStyle())
@@ -712,20 +748,23 @@ struct SidebarView: View {
                         .scaleEffect(0.8)
                 }
             }
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-            .padding(.horizontal)
-            .frame(maxWidth: .infinity)
-            .background(Color(.systemBackground))
-            .shadow(radius: 1)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(AppTheme.cardBackground)
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
     
-            
+            // 内容区域
             if suggestions.isEmpty {
                 VStack {
                     Spacer()
                     if isChecking {
-                        Text("正在检查...")
-                            .foregroundColor(.secondary)
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            
+                            Text("正在检查...")
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
                     } else if currentTextIsPerfect {
                         VStack(spacing: 16) {
                             Image(systemName: "checkmark.circle.fill")
@@ -737,26 +776,39 @@ struct SidebarView: View {
                                 .foregroundColor(.green)
                         }
                     } else {
-                        Text("暂无修改建议")
-                            .foregroundColor(.secondary)
+                        VStack(spacing: 12) {
+                            Image(systemName: "text.bubble")
+                                .font(.system(size: 36))
+                                .foregroundColor(AppTheme.secondaryText.opacity(0.6))
+                            
+                            Text("暂无修改建议")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
                     }
                     Spacer()
                 }
+                .frame(maxWidth: .infinity)
             } else {
-                List {
-                    ForEach(suggestions.filter { !acceptedSuggestions.contains($0.id) }) { suggestion in
-                        SuggestionRow(
-                            suggestion: suggestion,
-                            content: $content,
-                            acceptedSuggestions: $acceptedSuggestions
-                        )
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(suggestions.filter { !acceptedSuggestions.contains($0.id) }) { suggestion in
+                            SuggestionRow(
+                                suggestion: suggestion,
+                                content: $content,
+                                acceptedSuggestions: $acceptedSuggestions
+                            )
+                            .background(AppTheme.cardBackground)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+                            .padding(.horizontal, 8)
+                        }
                     }
+                    .padding(.vertical, 8)
                 }
             }
         }
-        .frame(width: 300)
-        .background(Color(.systemBackground))
-        .shadow(radius: 2)
+        .background(AppTheme.background)
     }
 }
 
@@ -767,90 +819,131 @@ struct SuggestionRow: View {
     @State private var isExpanded = true  // 默认展开
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
+            // 标题栏 - 原始文本和展开/折叠按钮
             Button(action: { isExpanded.toggle() }) {
                 HStack {
                     Text(suggestion.original)
-                        .font(.body)
-                        .foregroundColor(.primary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(AppTheme.text)
+                        .lineLimit(1)
                     Spacer()
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppTheme.secondaryText)
+                        .font(.caption)
                 }
             }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.clear)
             
             if isExpanded {
-                Text("建议：\(suggestion.suggestion)")
-                    .font(.body)
-                    .foregroundColor(.blue)
-                
-                Text("原因：\(suggestion.reason)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                HStack {
-                    Button(action: {
-                        // 只在当前段落中替换文本
-                        if !suggestion.contextText.isEmpty {
-                            // 使用上下文信息限制替换范围
-                            let segmentStartIndex = max(0, suggestion.contextStartPosition)
-                            let segmentEndIndex = min(content.count, segmentStartIndex + suggestion.contextText.count)
-                            
-                            if segmentStartIndex < segmentEndIndex && segmentEndIndex <= content.count {
-                                // 获取段落文本
-                                let segmentText = String(content[content.index(content.startIndex, offsetBy: segmentStartIndex)..<content.index(content.startIndex, offsetBy: segmentEndIndex)])
+                VStack(alignment: .leading, spacing: 12) {
+                    // 建议内容
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("建议：")
+                            .font(.caption)
+                            .foregroundColor(AppTheme.secondaryText)
+                        
+                        Text(suggestion.suggestion)
+                .font(.body)
+                            .foregroundColor(AppTheme.primary)
+                            .padding(8)
+                            .background(AppTheme.primary.opacity(0.1))
+                            .cornerRadius(6)
+                    }
+                    
+                    // 原因
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("原因：")
+                            .font(.caption)
+                            .foregroundColor(AppTheme.secondaryText)
+                        
+                        Text(suggestion.reason)
+                            .font(.caption)
+                            .foregroundColor(AppTheme.text)
+                            .padding(8)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(6)
+                    }
+                    
+                    // 操作按钮
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            // 只在当前段落中替换文本
+                            if !suggestion.contextText.isEmpty {
+                                // 使用上下文信息限制替换范围
+                                let segmentStartIndex = max(0, suggestion.contextStartPosition)
+                                let segmentEndIndex = min(content.count, segmentStartIndex + suggestion.contextText.count)
                                 
-                                // 在段落中查找原始文本
-                                if let range = segmentText.range(of: suggestion.original) {
-                                    // 计算在完整文本中的位置
-                                    let fullTextStartIndex = content.index(content.startIndex, offsetBy: segmentStartIndex)
-                                    let actualStartIndex = content.index(fullTextStartIndex, offsetBy: range.lowerBound.utf16Offset(in: segmentText))
-                                    let actualEndIndex = content.index(fullTextStartIndex, offsetBy: range.upperBound.utf16Offset(in: segmentText))
+                                if segmentStartIndex < segmentEndIndex && segmentEndIndex <= content.count {
+                                    // 获取段落文本
+                                    let segmentText = String(content[content.index(content.startIndex, offsetBy: segmentStartIndex)..<content.index(content.startIndex, offsetBy: segmentEndIndex)])
                                     
-                                    // 替换文本
+                                    // 在段落中查找原始文本
+                                    if let range = segmentText.range(of: suggestion.original) {
+                                        // 计算在完整文本中的位置
+                                        let fullTextStartIndex = content.index(content.startIndex, offsetBy: segmentStartIndex)
+                                        let actualStartIndex = content.index(fullTextStartIndex, offsetBy: range.lowerBound.utf16Offset(in: segmentText))
+                                        let actualEndIndex = content.index(fullTextStartIndex, offsetBy: range.upperBound.utf16Offset(in: segmentText))
+                                        
+                                        // 替换文本
+                                        var newContent = content
+                                        newContent.replaceSubrange(actualStartIndex..<actualEndIndex, with: suggestion.suggestion)
+                                        content = newContent
+                                        
+                                        // 标记为已接受
+                                        acceptedSuggestions.insert(suggestion.id)
+                                    }
+                                }
+                            } else {
+                                // 向后兼容：如果没有上下文信息，使用原来的方法
+                                if let range = content.range(of: suggestion.original) {
                                     var newContent = content
-                                    newContent.replaceSubrange(actualStartIndex..<actualEndIndex, with: suggestion.suggestion)
+                                    newContent.replaceSubrange(range, with: suggestion.suggestion)
                                     content = newContent
                                     
                                     // 标记为已接受
                                     acceptedSuggestions.insert(suggestion.id)
                                 }
                             }
-                        } else {
-                            // 向后兼容：如果没有上下文信息，使用原来的方法
-                            if let range = content.range(of: suggestion.original) {
-                                var newContent = content
-                                newContent.replaceSubrange(range, with: suggestion.suggestion)
-                                content = newContent
-                                
-                                // 标记为已接受
-                                acceptedSuggestions.insert(suggestion.id)
-                            }
+                        }) {
+                    Text("采纳")
+                                .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                                .background(AppTheme.primary)
+                                .cornerRadius(6)
+                }
+                
+                        Button(action: {
+                            // 标记为已忽略
+                            acceptedSuggestions.insert(suggestion.id)
+                        }) {
+                    Text("忽略")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppTheme.secondaryText)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(6)
                         }
-                    }) {
-                        Text("采纳")
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.blue)
-                            .cornerRadius(5)
-                    }
-                    Button(action: {
-                        // 标记为已忽略
-                        acceptedSuggestions.insert(suggestion.id)
-                    }) {
-                        Text("忽略")
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.secondary.opacity(0.1))
-                            .cornerRadius(8)
+                        
+                        Spacer()
                     }
                 }
-                .padding(.top, 4)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
             }
         }
-        .padding(.vertical, 8)
+        .background(Color.white)
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
         .id(suggestion.id) // 添加稳定 ID 避免重新渲染时消失
     }
 }

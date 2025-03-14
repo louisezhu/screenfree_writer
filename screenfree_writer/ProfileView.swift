@@ -10,90 +10,151 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                // 顶部标题
-                HStack {
-                    Text("我的")
-                        .font(.title)
-                        .bold()
-                    Spacer()
-                }
-                .padding()
-                
-                // 内容列表
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // 写作统计
-                        VStack(alignment: .leading, spacing: 12) {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // 顶部用户头像和信息
+                    HStack(spacing: 20) {
+                        // 用户头像
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                                .shadow(color: AppTheme.primary.opacity(0.3), radius: 10, x: 0, y: 4)
+                            
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("专注的作家")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppTheme.text)
+                            
+                            Text("创作不受打扰")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 16)
+                    
+                    // 写作统计 - 使用卡片形式
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "chart.bar.fill")
+                                .foregroundColor(AppTheme.primary)
                             Text("写作统计")
                                 .font(.headline)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 8) {
-                                StatRow(title: "总书籍数", value: formattedNumber(viewModel.books.count), icon: "book.closed.fill")
-                                StatRow(title: "总章节数", value: formattedNumber(totalChaptersCount), icon: "list.bullet")
-                                StatRow(title: "总字数", value: formattedNumber(totalWordsCount), icon: "chart.bar.fill")
-                            }
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(radius: 2)
+                                .foregroundColor(AppTheme.text)
+                            Spacer()
                         }
-                        .padding(.horizontal)
                         
-                        // 设置选项
-                        VStack(alignment: .leading, spacing: 12) {
+                        // 统计卡片
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 16) {
+                            StatCard(title: "书籍", value: formattedNumber(viewModel.books.count), icon: "book.closed.fill")
+                            StatCard(title: "章节", value: formattedNumber(totalChaptersCount), icon: "list.bullet")
+                            StatCard(title: "字数", value: formattedNumber(totalWordsCount), icon: "chart.bar.fill")
+                        }
+                    }
+                    .padding()
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
+                    
+                    // 设置选项
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "gear")
+                                .foregroundColor(AppTheme.primary)
                             Text("设置")
                                 .font(.headline)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                NavigationLink(destination: Text("iCloud设置")) {
-                                    SettingRow(title: "iCloud同步", icon: "icloud")
-                                }
-                                
-                                NavigationLink(destination: Text("主题设置")) {
-                                    SettingRow(title: "主题设置", icon: "paintpalette")
-                                }
-                                
-                                NavigationLink(destination: Text("快捷键设置")) {
-                                    SettingRow(title: "快捷键设置", icon: "keyboard")
-                                }
-                                
-                                NavigationLink(destination: Text("语音设置")) {
-                                    SettingRow(title: "语音设置", icon: "waveform")
-                                }
-                            }
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(radius: 2)
+                                .foregroundColor(AppTheme.text)
+                            Spacer()
                         }
-                        .padding(.horizontal)
                         
-                        // 关于
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(spacing: 0) {
+                            NavigationLink(destination: Text("iCloud设置")) {
+                                SettingRow(title: "iCloud同步", icon: "icloud", showDivider: true)
+                            }
+                            
+                            NavigationLink(destination: Text("主题设置")) {
+                                SettingRow(title: "主题设置", icon: "paintpalette", showDivider: true)
+                            }
+                            
+                            NavigationLink(destination: Text("快捷键设置")) {
+                                SettingRow(title: "快捷键设置", icon: "keyboard", showDivider: true)
+                            }
+                            
+                            NavigationLink(destination: Text("语音设置")) {
+                                SettingRow(title: "语音设置", icon: "waveform", showDivider: false)
+                            }
+                        }
+                        .background(AppTheme.cardBackground)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
+                    }
+                    .padding()
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
+                    
+                    // 关于
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundColor(AppTheme.primary)
                             Text("关于")
                                 .font(.headline)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                NavigationLink(destination: Text("使用帮助")) {
-                                    SettingRow(title: "使用帮助", icon: "questionmark.circle")
-                                }
-                                
-                                NavigationLink(destination: Text("关于我们")) {
-                                    SettingRow(title: "关于我们", icon: "info.circle")
-                                }
-                            }
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(radius: 2)
+                                .foregroundColor(AppTheme.text)
+                            Spacer()
                         }
-                        .padding(.horizontal)
+                        
+                        VStack(spacing: 0) {
+                            NavigationLink(destination: Text("使用帮助")) {
+                                SettingRow(title: "使用帮助", icon: "questionmark.circle", showDivider: true)
+                            }
+                            
+                            NavigationLink(destination: Text("关于我们")) {
+                                SettingRow(title: "关于我们", icon: "info.circle", showDivider: false)
+                            }
+                        }
+                        .background(AppTheme.cardBackground)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
                     }
-                    .padding(.vertical)
+                    .padding()
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal)
                 }
+                .padding(.bottom, 24)
             }
+            .background(AppTheme.background.ignoresSafeArea())
+            .navigationTitle("我的")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -128,46 +189,74 @@ struct ProfileView: View {
     }
 }
 
-struct StatRow: View {
+struct StatCard: View {
     let title: String
     let value: String
     let icon: String
     
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.blue)
-                .frame(width: 30)
+        VStack(spacing: 12) {
+            // 图标
+            ZStack {
+                Circle()
+                    .fill(AppTheme.primary.opacity(0.1))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(AppTheme.primary)
+            }
             
-            Text(title)
-            
-            Spacer()
-            
+            // 数值
             Text(value)
-                .foregroundColor(.secondary)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(AppTheme.text)
+            
+            // 标题
+            Text(title)
+                .font(.caption)
+                .foregroundColor(AppTheme.secondaryText)
         }
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
 struct SettingRow: View {
     let title: String
     let icon: String
+    let showDivider: Bool
     
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.blue)
-                .frame(width: 30)
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(AppTheme.primary)
+                    .frame(width: 30)
+                
+                Text(title)
+                    .foregroundColor(AppTheme.text)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(AppTheme.secondaryText)
+                    .font(.system(size: 14))
+            }
+            .padding(.vertical, 14)
+            .padding(.horizontal)
             
-            Text(title)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
+            if showDivider {
+                Divider()
+                    .padding(.leading, 56)
+            }
         }
-        .padding()
-        .contentShape(Rectangle())
     }
 }
 

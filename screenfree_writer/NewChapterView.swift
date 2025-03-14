@@ -8,10 +8,43 @@ struct NewChapterView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section {
-                    TextField("章节标题", text: $chapterTitle)
+            ZStack {
+                // 背景色
+                AppTheme.background.ignoresSafeArea()
+                
+                VStack(alignment: .leading, spacing: 24) {
+                    // 标题部分
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "doc.text")
+                                .foregroundColor(AppTheme.primary)
+                        }
+                        .padding(.horizontal)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("章节标题")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                            
+                            TextField("请输入章节标题", text: $chapterTitle)
+                                .padding(12)
+                                .background(AppTheme.cardBackground)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(AppTheme.secondary.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                        .padding()
+                        .background(AppTheme.cardBackground)
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .padding(.horizontal)
+                    }
+                    
+                    Spacer()
                 }
+                .padding(.top, 20)
             }
             .navigationTitle("新建章节")
             .navigationBarTitleDisplayMode(.inline)
@@ -20,6 +53,7 @@ struct NewChapterView: View {
                     Button("取消") {
                         dismiss()
                     }
+                    .foregroundColor(AppTheme.secondaryText)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -27,6 +61,7 @@ struct NewChapterView: View {
                         viewModel.addChapter(to: book, title: chapterTitle)
                         dismiss()
                     }
+                    .foregroundColor(chapterTitle.isEmpty ? AppTheme.secondaryText.opacity(0.5) : AppTheme.primary)
                     .disabled(chapterTitle.isEmpty)
                 }
             }
