@@ -7,6 +7,8 @@ import UIKit
 
 struct ProfileView: View {
     @StateObject private var viewModel = BookViewModel()
+    @State private var enableTextCorrection: Bool = AppSettings.shared.enableTextCorrection
+    @State private var textCorrectionService: TextCorrectionServiceType = AppSettings.shared.textCorrectionService
     
     var body: some View {
         NavigationStack {
@@ -92,15 +94,74 @@ struct ProfileView: View {
                                 SettingRow(title: "iCloud同步", icon: "icloud", showDivider: true)
                             }
                             
-                            NavigationLink(destination: Text("主题设置")) {
-                                SettingRow(title: "主题设置", icon: "paintpalette", showDivider: true)
+                            HStack {
+                                Image(systemName: "pencil.and.outline")
+                                    .foregroundColor(AppTheme.primary)
+                                    .frame(width: 30)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("文本修正")
+                                        .foregroundColor(AppTheme.text)
+                                    
+                                    Text("实时修正文字错误")
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.secondaryText)
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: $enableTextCorrection)
+                                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
+                                    .onChange(of: enableTextCorrection) { newValue in
+                                        AppSettings.shared.enableTextCorrection = newValue
+                                    }
                             }
+                            .padding(.vertical, 14)
+                            .padding(.horizontal)
                             
-                            NavigationLink(destination: Text("快捷键设置")) {
+                            Divider()
+                                .padding(.leading, 56)
+                                
+                            // 文本修正服务选择
+                            if enableTextCorrection {
+                                HStack {
+                                    Image(systemName: "gear.circle")
+                                        .foregroundColor(AppTheme.primary)
+                                        .frame(width: 30)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("修正服务")
+                                            .foregroundColor(AppTheme.text)
+                                        
+                                        Text("选择文本修正引擎")
+                                            .font(.caption)
+                                            .foregroundColor(AppTheme.secondaryText)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Picker("", selection: $textCorrectionService) {
+                                        Text("在线API").tag(TextCorrectionServiceType.doubao)
+                                        Text("本地模型").tag(TextCorrectionServiceType.deepseek)
+                                    }
+                                    .pickerStyle(SegmentedPickerStyle())
+                                    .frame(width: 160)
+                                    .onChange(of: textCorrectionService) { newValue in
+                                        AppSettings.shared.textCorrectionService = newValue
+                                    }
+                                }
+                                .padding(.vertical, 14)
+                                .padding(.horizontal)
+                                
+                                Divider()
+                                    .padding(.leading, 56)
+                    }
+                    
+                    NavigationLink(destination: Text("快捷键设置")) {
                                 SettingRow(title: "快捷键设置", icon: "keyboard", showDivider: true)
-                            }
-                            
-                            NavigationLink(destination: Text("语音设置")) {
+                    }
+                    
+                    NavigationLink(destination: Text("语音设置")) {
                                 SettingRow(title: "语音设置", icon: "waveform", showDivider: false)
                             }
                         }
@@ -129,11 +190,11 @@ struct ProfileView: View {
                         }
                         
                         VStack(spacing: 0) {
-                            NavigationLink(destination: Text("使用帮助")) {
+                    NavigationLink(destination: Text("使用帮助")) {
                                 SettingRow(title: "使用帮助", icon: "questionmark.circle", showDivider: true)
-                            }
-                            
-                            NavigationLink(destination: Text("关于我们")) {
+                    }
+                    
+                    NavigationLink(destination: Text("关于我们")) {
                                 SettingRow(title: "关于我们", icon: "info.circle", showDivider: false)
                             }
                         }
@@ -235,15 +296,15 @@ struct SettingRow: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Image(systemName: icon)
+        HStack {
+            Image(systemName: icon)
                     .foregroundColor(AppTheme.primary)
-                    .frame(width: 30)
-                
-                Text(title)
+                .frame(width: 30)
+            
+            Text(title)
                     .foregroundColor(AppTheme.text)
-                
-                Spacer()
+            
+            Spacer()
                 
                 Image(systemName: "chevron.right")
                     .foregroundColor(AppTheme.secondaryText)

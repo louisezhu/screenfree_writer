@@ -77,6 +77,14 @@ class BookViewModel: ObservableObject {
         syncChapterToCloud(chapter)
     }
     
+    func updateChapterTitle(_ chapter: ChapterEntity, title: String) {
+        chapter.title = title
+        chapter.updatedAt = Date()
+        
+        saveContext()
+        syncChapterToCloud(chapter)
+    }
+    
     func deleteChapter(_ chapter: ChapterEntity) {
         context.delete(chapter)
         saveContext()

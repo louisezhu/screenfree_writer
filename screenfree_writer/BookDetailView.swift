@@ -8,6 +8,8 @@ struct BookDetailView: View {
     @State private var showingEditBookSheet = false
     @State private var editingBookTitle: String = ""
     @State private var showingDeleteAlert = false
+    @State private var showingRenameSheet = false
+    @State private var newChapterTitle: String = ""
     @Environment(\.dismiss) private var dismiss
     let book: BookEntity
     
@@ -124,7 +126,11 @@ struct BookDetailView: View {
                                         .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                                         .padding(.horizontal)
                         .contextMenu {
-                            Button(action: {}) {
+                            Button(action: {
+                                selectedChapter = chapter
+                                newChapterTitle = chapter.title ?? ""
+                                showingRenameSheet = true
+                            }) {
                                 Label("重命名", systemImage: "pencil")
                             }
                             Button(role: .destructive, action: {
@@ -217,6 +223,9 @@ struct BookDetailView: View {
         }
         .sheet(isPresented: $showingEditBookSheet) {
             EditBookView(book: book, bookTitle: $editingBookTitle, viewModel: viewModel)
+        }
+        .sheet(isPresented: $showingRenameSheet) {
+            RenameChapterView(chapter: selectedChapter, chapterTitle: $newChapterTitle, viewModel: viewModel)
         }
         .alert("确定删除此书籍？", isPresented: $showingDeleteAlert) {
             Button("取消", role: .cancel) {}
@@ -518,5 +527,77 @@ struct AspectRatio<Content: View>: View {
     var body: some View {
         content
             .aspectRatio(ratio, contentMode: .fit)
+    }
+} 
+
+// 章节重命名视图
+struct RenameChapterView: View {
+    @Environment(\.dismiss) private var dismiss
+    let chapter: ChapterEntity?
+    @Binding var chapterTitle: String
+    @ObservedObject var viewModel: BookViewModel
+    @FocusState private var isTitleFocused: Bool
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                // 背景色
+                AppTheme.background.ignoresSafeArea()
+                
+                VStack(alignment: .leading, spacing: 24) {
+                    // 标题部分
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("章节标题")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                            
+                            TextField("请输入章节标题", text: $chapterTitle)
+                                .focused($isTitleFocused)
+                                .padding(12)
+                                .background(AppTheme.cardBackground)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(AppTheme.secondary.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                        .padding()
+                        .background(AppTheme.cardBackground)
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .padding(.horizontal)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.top, 20)
+            }
+            .navigationTitle("重命名章节")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                    .foregroundColor(AppTheme.secondaryText)
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        if let chapter = chapter, !chapterTitle.isEmpty {
+                            // 调用更新章节标题的方法
+                            viewModel.updateChapterTitle(chapter, title: chapterTitle)
+                        }
+                        dismiss()
+                    }
+                    .foregroundColor(chapterTitle.isEmpty ? AppTheme.secondaryText.opacity(0.5) : AppTheme.primary)
+                    .disabled(chapterTitle.isEmpty)
+                }
+            }
+            .onAppear {
+                isTitleFocused = true
+            }
+        }
     }
 } 

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Foundation
 
 struct CustomTextEditor: UIViewRepresentable {
     @Binding var text: String
@@ -311,7 +312,7 @@ struct ChapterEditView: View {
                         .onChange(of: content) { newValue in
                             // 更新章节内容和更新时间
                             chapter.updatedAt = Date()
-                            viewModel.updateChapter(chapter, content: newValue)
+                        viewModel.updateChapter(chapter, content: newValue)
                             if !searchText.isEmpty {
                                 findMatches()
                             }
@@ -441,6 +442,13 @@ struct ChapterEditView: View {
     private func checkText() async {
         guard !content.isEmpty else { return }
         
+        // 检查是否启用了文本修正功能
+        guard AppSettings.shared.enableTextCorrection else {
+            // 功能已禁用，不进行检查
+            isChecking = false
+            return
+        }
+        
         // 获取当前光标位置之前的内容
         let currentIndex = selectedRange.location
         let textBeforeCursor = currentIndex > 0 ? String(content.prefix(currentIndex)) : ""
@@ -518,7 +526,7 @@ struct ChapterEditView: View {
             
             // 创建一个检测任务，并赋予它一个变量，这样可以在任务取消时捕获到
             let task = Task {
-                try await AutoCorrectService.shared.checkText(segmentToCheck)
+                try await AutoCorrectServiceFactory.getService().checkText(segmentToCheck)
             }
             
             // 设置一个超时控制

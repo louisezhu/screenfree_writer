@@ -1,7 +1,8 @@
 import Foundation
 
-class AutoCorrectService {
-    static let shared = AutoCorrectService()
+// 原来的AutoCorrectService重命名为PyCorrectService以区分不同的实现
+class PyCorrectService: AutoCorrectServiceProtocol {
+    static let shared = PyCorrectService()
     private let apiKey = "9667e284-a981-4366-b39c-ff5ab943fb97"
     private let baseURL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
     
@@ -44,153 +45,116 @@ class AutoCorrectService {
         let finalRequest = request
         
         // 使用 TaskGroup 创建一个可取消的任务组，添加超时控制
-        return try await withTaskGroup(of: [Suggestion]?.self) { group in
-            // 主要请求任务
+        return try await withThrowingTaskGroup(of: [Suggestion].self) { group in
+            // 添加主API请求任务
             group.addTask {
-                do {
-                    // 添加性能日志
-                    let startTime = Date()
-                    print("开始API请求：\(startTime)")
-                    
-                    let (data, response) = try await URLSession.shared.data(for: finalRequest)
-                    
-                    // 记录请求耗时
-                    let endTime = Date()
-                    let timeInterval = endTime.timeIntervalSince(startTime)
-                    print("API请求完成，耗时: \(String(format: "%.2f", timeInterval))秒")
-                    
-                    // 检查 HTTP 响应状态
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        print("无效的 HTTP 响应")
-                        return []
+                let (data, response) = try await URLSession.shared.data(for: finalRequest)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw URLError(.badServerResponse)
+                }
+                
+                // 检查响应状态码
+                if httpResponse.statusCode != 200 {
+                    // 尝试解析API错误
+                    if let apiError = try? JSONDecoder().decode(APIError.self, from: data) {
+                        throw NSError(domain: "com.screenfree.writer", 
+                                     code: httpResponse.statusCode, 
+                                     userInfo: [NSLocalizedDescriptionKey: apiError.error.message])
                     }
                     
-                    if httpResponse.statusCode != 200 {
-                        if let jsonStr = String(data: data, encoding: .utf8) {
-                            print("API错误响应: \(jsonStr)")
-                        }
-                        
-                        if let errorResponse = try? JSONDecoder().decode(APIError.self, from: data) {
-                            print("API错误: \(errorResponse.error.message)")
-                        }
-                        return []
-                    }
-                    
-                    // 解析响应数据
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("API Response: \(jsonString)")
-                    }
-                    
-                    let decoder = JSONDecoder()
-                    let apiResponse = try decoder.decode(DoubaoAPIResponse.self, from: data)
-                    
-                    if let content = apiResponse.choices.first?.message.content {
-                        // 提取 JSON 部分
-                        var jsonContent = content
-                        
-                        // 移除 markdown 代码块标记 ```json 和 ```
-                        if let startIndex = content.range(of: "```json\n")?.upperBound {
-                            if let endIndex = content.range(of: "\n```", range: startIndex..<content.endIndex)?.lowerBound {
-                                jsonContent = String(content[startIndex..<endIndex])
-                            }
-                        } else if let startIndex = content.range(of: "```\n")?.upperBound {
-                            if let endIndex = content.range(of: "\n```", range: startIndex..<content.endIndex)?.lowerBound {
-                                jsonContent = String(content[startIndex..<endIndex])
-                            }
-                        }
-                        
-                        // 尝试解析JSON
-                        do {
-                            let jsonData = jsonContent.data(using: .utf8)!
-                            let response = try decoder.decode(DoubaoResponse.self, from: jsonData)
-                            
-                            if let apiSuggestions = response.suggestions {
-                                // 将API返回的建议转换为应用使用的Suggestion格式
-                                let suggestions = apiSuggestions.map { apiSuggestion in
-                                    return Suggestion(
-                                        original: apiSuggestion.original,
-                                        suggestion: apiSuggestion.suggestion,
-                                        reason: apiSuggestion.reason
-                                    )
-                                }
-                                return suggestions
-                            } else {
-                                return []
-                            }
-                        } catch {
-                            print("JSON 解析错误: \(error)")
-                            
-                            // 尝试手动提取
-                            let suggestions = self.extractSuggestions(from: jsonContent)
-                            if !suggestions.isEmpty {
-                                return suggestions
-                            }
-                        }
-                    }
-                    
-                    return []
-                } catch {
-                    // 捕获网络错误但不重新抛出，返回空数组
-                    if (error as NSError).domain == NSURLErrorDomain && (error as NSError).code == -999 {
-                        print("API请求被取消")
-                    } else {
-                        print("API请求错误: \(error)")
-                    }
+                    // 如果不能解析为API错误，则抛出通用HTTP错误
+                    throw URLError(.badServerResponse)
+                }
+                
+                // 打印API响应以便调试
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("API响应: \(responseString)")
+                }
+                
+                // 解析JSON响应
+                let decoder = JSONDecoder()
+                let apiResponse = try decoder.decode(APIResponseData.self, from: data)
+                
+                // 确认有消息内容
+                guard let firstChoice = apiResponse.choices.first,
+                      let content = firstChoice.message.content else {
+                    // 如果没有内容，则返回空数组
                     return []
                 }
+                
+                // 从内容中提取JSON，并转换为建议
+                return try self.extractSuggestionsFromContent(content)
             }
             
-            // 等待并返回第一个完成的非空结果
-            for await result in group {
-                if let suggestions = result, !suggestions.isEmpty {
-                    // 取消其他任务
-                    group.cancelAll()
-                    return suggestions
-                }
-            }
-            
-            // 如果所有任务都失败，返回空数组
-            return []
+            // 等待并返回结果
+            return try await group.next() ?? []
         }
     }
     
-    // 手动提取建议
-    private func extractSuggestions(from jsonContent: String) -> [Suggestion] {
-        var suggestions: [Suggestion] = []
+    private func extractSuggestionsFromContent(_ content: String) throws -> [Suggestion] {
+        // 从文本中识别和提取JSON
+        guard let jsonData = findJSONInString(content) else {
+            throw NSError(domain: "com.screenfree.writer", code: 1002, 
+                         userInfo: [NSLocalizedDescriptionKey: "无法从响应中提取JSON数据"])
+        }
         
-        // 使用正则表达式提取建议
-        let pattern = "\"original\":\\s*\"([^\"]+)\"[^}]*\"suggestion\":\\s*\"([^\"]+)\"[^}]*\"reason\":\\s*\"([^\"]+)\""
+        // 解析提取的JSON
+        let decoder = JSONDecoder()
+        let doubaoResponse = try decoder.decode(DoubaoResponse.self, from: jsonData)
+        
+        // 如果状态为"perfect"或没有建议，返回空数组
+        if doubaoResponse.status == "perfect" || doubaoResponse.suggestions == nil || doubaoResponse.suggestions!.isEmpty {
+            return []
+        }
+        
+        // 返回建议数组
+        return doubaoResponse.suggestions ?? []
+    }
+    
+    private func findJSONInString(_ text: String) -> Data? {
+        let pattern = "\\{[^{]*?\"status\"\\s*:\\s*\"[^\"]*\"[^}]*\\}"
+        
         do {
             let regex = try NSRegularExpression(pattern: pattern, options: [])
-            let nsString = jsonContent as NSString
-            let matches = regex.matches(in: jsonContent, options: [], range: NSRange(location: 0, length: nsString.length))
+            let nsString = text as NSString
+            let range = NSRange(location: 0, length: nsString.length)
             
-            for match in matches {
-                if match.numberOfRanges >= 4 {
-                    let original = nsString.substring(with: match.range(at: 1))
-                    let suggestion = nsString.substring(with: match.range(at: 2))
-                    let reason = nsString.substring(with: match.range(at: 3))
-                    
-                    suggestions.append(Suggestion(original: original, suggestion: suggestion, reason: reason))
-                }
+            if let match = regex.firstMatch(in: text, options: [], range: range) {
+                let matchedString = nsString.substring(with: match.range)
+                
+                // 将字符串转换为数据
+                return matchedString.data(using: .utf8)
             }
         } catch {
             print("正则表达式错误: \(error)")
         }
         
-        return suggestions
+        return nil
     }
 }
 
-struct DoubaoAPIResponse: Codable {
+// 为了向后兼容，提供一个AutoCorrectService类，它使用工厂方法获取当前配置的服务
+class AutoCorrectService {
+    static let shared = AutoCorrectService()
+    
+    private init() {}
+    
+    func checkText(_ text: String) async throws -> [Suggestion] {
+        return try await AutoCorrectServiceFactory.getService().checkText(text)
+    }
+}
+
+struct APIResponseData: Codable {
+    let id: String
     let choices: [Choice]
     
     struct Choice: Codable {
         let message: Message
-    }
-    
-    struct Message: Codable {
-        let content: String
+        
+        struct Message: Codable {
+            let content: String?
+        }
     }
 }
 
@@ -212,6 +176,7 @@ struct Suggestion: Codable, Identifiable, Equatable {
     // 用于定位原文段落的上下文信息
     var contextStartPosition: Int = 0
     var contextText: String = ""
+    var confidence: Double = 1.0 // 可信度，DeepseekCoreMLService可能需要
     
     static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
         return lhs.id == rhs.id && 
