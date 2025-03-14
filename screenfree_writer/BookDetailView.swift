@@ -230,7 +230,20 @@ struct BookDetailView: View {
     }
     
     private var totalWordCount: Int {
-        book.chapters?.reduce(0) { $0 + (($1 as? ChapterEntity)?.content?.count ?? 0) } ?? 0
+        let chapters = book.chapters?.allObjects as? [ChapterEntity] ?? []
+        return chapters.reduce(0) { $0 + countWords($1.content ?? "") }
+    }
+    
+    // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）
+    private func countWords(_ text: String) -> Int {
+        // 移除所有标点符号、空格和换行
+        let pattern = "[\\p{P}\\p{Z}\\p{C}]"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: text.utf16.count)
+        let cleanText = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+        
+        // 返回清理后的文本长度
+        return cleanText?.count ?? 0
     }
 }
 
@@ -321,8 +334,8 @@ struct ChapterRow: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                Text(chapter.title ?? "未命名")
-                    .font(.body)
+                        Text(chapter.title ?? "未命名")
+                            .font(.body)
                             .fontWeight(.medium)
                             .foregroundColor(AppTheme.text)
                         
@@ -339,8 +352,8 @@ struct ChapterRow: View {
                 
                 // 右侧字数和指示器
                 HStack(spacing: 8) {
-                Text("\(chapter.content?.count ?? 0) 字")
-                    .font(.caption)
+                    Text("\(countWords(chapter.content ?? "")) 字")
+                        .font(.caption)
                         .foregroundColor(AppTheme.secondaryText)
                     
                     Image(systemName: "chevron.right")
@@ -350,8 +363,35 @@ struct ChapterRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .contentShape(Rectangle()) // 确保整个区域都可点击
         }
         .buttonStyle(PlainButtonStyle())
+    }
+    
+    // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）
+    private func countWords(_ text: String) -> Int {
+        // 移除所有标点符号、空格和换行
+        let pattern = "[\\p{P}\\p{Z}\\p{C}]"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: text.utf16.count)
+        let cleanText = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+        
+        // 返回清理后的文本长度
+        return cleanText?.count ?? 0
+    }
+    
+    // 格式化日期
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+    
+    // 格式化短日期
+    private func formattedShortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter.string(from: date)
     }
 }
 

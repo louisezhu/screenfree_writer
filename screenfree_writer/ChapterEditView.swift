@@ -15,6 +15,13 @@ struct CustomTextEditor: UIViewRepresentable {
         textView.isScrollEnabled = true
         textView.autocapitalizationType = .sentences
         textView.autocorrectionType = .yes
+        
+        // 设置初始文本和光标位置
+        textView.text = text
+        if !text.isEmpty {
+            textView.selectedRange = NSRange(location: text.count, length: 0)
+        }
+        
         return textView
     }
     
@@ -25,10 +32,13 @@ struct CustomTextEditor: UIViewRepresentable {
         // 检查建议是否变化 - 比较数组长度和内容
         let suggestionsChanged = areArraysDifferent(context.coordinator.lastSuggestions, suggestions)
         
+        // 设置当前光标位置
+        let currentSelectedRange = selectedRange.location < text.count ? selectedRange : NSRange(location: text.count, length: 0)
+        
         // 如果文本或建议变化，需要更新
         if textChanged || suggestionsChanged {
             // 记录当前光标位置
-            let selectedRange = uiView.selectedRange
+            let viewSelectedRange = uiView.selectedRange.location < uiView.text.count ? uiView.selectedRange : NSRange(location: uiView.text.count, length: 0)
             
             // 创建富文本
             let attributedString = NSMutableAttributedString(string: text)
@@ -89,13 +99,20 @@ struct CustomTextEditor: UIViewRepresentable {
             // 更新文本视图
             uiView.attributedText = attributedString
             
-            // 恢复光标位置
-            if selectedRange.location < text.count {
-                uiView.selectedRange = selectedRange
+            // 恢复光标位置 - 优先使用视图中的选择位置
+            if textChanged {
+                // 如果是文本改变，使用传入的选择范围
+                uiView.selectedRange = currentSelectedRange
+            } else {
+                // 如果只是建议改变，保持当前编辑位置
+                uiView.selectedRange = viewSelectedRange
             }
             
             // 更新上次的建议记录
             context.coordinator.lastSuggestions = suggestions
+        } else if uiView.selectedRange.location != currentSelectedRange.location {
+            // 如果只是光标位置需要更新
+            uiView.selectedRange = currentSelectedRange
         }
     }
     
@@ -128,6 +145,9 @@ struct CustomTextEditor: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             // 更新绑定的文本值
             parent.text = textView.text
+            
+            // 更新光标位置
+            parent.selectedRange = textView.selectedRange
             
             // 如果有建议，应用高亮
             if !lastSuggestions.isEmpty {
@@ -193,9 +213,11 @@ struct CustomTextEditor: UIViewRepresentable {
                 // 更新文本视图
                 textView.attributedText = attributedString
                 
-                // 恢复光标位置
-                if selectedRange.location < textView.text.count {
+                // 恢复光标位置，确保不会超出文本长度
+                if selectedRange.location <= textView.text.count {
                     textView.selectedRange = selectedRange
+                } else if !textView.text.isEmpty {
+                    textView.selectedRange = NSRange(location: textView.text.count, length: 0)
                 }
             }
         }
@@ -292,7 +314,7 @@ struct ChapterEditView: View {
                 // 底部工具栏
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(content.count)字")
+                        Text("\(countWords(content))字")
                             .foregroundColor(AppTheme.secondaryText)
                             .font(.caption)
                         
@@ -533,6 +555,25 @@ struct ChapterEditView: View {
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+    
+    // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）
+    private func countWords(_ text: String) -> Int {
+        // 移除所有标点符号、空格和换行
+        let pattern = "[\\p{P}\\p{Z}\\p{C}]"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: text.utf16.count)
+        let cleanText = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+        
+        // 返回清理后的文本长度
+        return cleanText?.count ?? 0
+    }
+    
+    // 辅助函数：格式化短日期
+    private func formattedShortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
         return formatter.string(from: date)
     }
     

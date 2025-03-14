@@ -213,7 +213,19 @@ struct BookCard: View {
     
     private var totalWordCount: Int {
         let chapters = book.chapters?.allObjects as? [ChapterEntity] ?? []
-        return chapters.reduce(0) { $0 + ($1.content?.count ?? 0) }
+        return chapters.reduce(0) { $0 + countWords($1.content ?? "") }
+    }
+    
+    // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）
+    private func countWords(_ text: String) -> Int {
+        // 移除所有标点符号、空格和换行
+        let pattern = "[\\p{P}\\p{Z}\\p{C}]"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: text.utf16.count)
+        let cleanText = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+        
+        // 返回清理后的文本长度
+        return cleanText?.count ?? 0
     }
     
     struct AspectRatio<Content: View>: View {
