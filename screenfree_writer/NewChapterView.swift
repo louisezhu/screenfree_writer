@@ -15,12 +15,6 @@ struct NewChapterView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // 标题部分
                     VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: "doc.text")
-                                .foregroundColor(AppTheme.primary)
-                        }
-                        .padding(.horizontal)
-                        
                         VStack(alignment: .leading, spacing: 8) {
                             Text("章节标题")
                                 .font(.subheadline)

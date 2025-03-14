@@ -155,7 +155,7 @@ struct BookCard: View {
                 HStack(spacing: 4) {
                     Image(systemName: lastSyncTime != nil ? "checkmark.icloud" : "icloud")
                         .font(.caption2)
-                    Text(lastSyncTime != nil ? "同步于\(formattedTime(lastSyncTime!))" : "未同步")
+                    Text(lastSyncTime != nil ? "同步于\(formattedShortDate(lastSyncTime!))" : "未同步")
                         .font(.caption2)
                 }
                 .foregroundColor(lastSyncTime != nil ? AppTheme.accent : AppTheme.secondaryText)
@@ -216,27 +216,6 @@ struct BookCard: View {
         return chapters.reduce(0) { $0 + ($1.content?.count ?? 0) }
     }
     
-    // 辅助函数：格式化日期为短格式
-    private func formattedShortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        return formatter.string(from: date)
-    }
-    
-    // 辅助函数：仅显示时间
-    private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-    
-    // 辅助函数：标准日期格式
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
-    }
-    
     struct AspectRatio<Content: View>: View {
         private let ratio: CGFloat
         private let content: Content
@@ -256,3 +235,10 @@ struct BookCard: View {
 #Preview {
     WritingView()
 } 
+
+// 辅助函数：格式化日期
+public func formattedShortDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd HH:mm"
+    return formatter.string(from: date)
+}

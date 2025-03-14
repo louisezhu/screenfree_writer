@@ -18,70 +18,92 @@ struct BookDetailView: View {
             
             VStack(spacing: 0) {
                 // 书籍信息头部
-                VStack(spacing: 16) {
-                    // 书籍封面
-                    ZStack {
-                        Circle()
-                            .fill(
+                VStack(spacing: 0) {
+                    HStack(spacing: 20) {
+                        // 方形书籍封面
+                        AspectRatio(3/4) {
+                            ZStack {
+                                // 渐变背景
                                 LinearGradient(
-                                    gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
+                                    gradient: Gradient(colors: [
+                                        AppTheme.primary.opacity(0.7),
+                                        AppTheme.secondary.opacity(0.5)
+                                    ]),
                                     startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                                endPoint: .bottomTrailing
                                 )
-                            )
-                            .frame(width: 100, height: 100)
-                            .shadow(color: AppTheme.primary.opacity(0.3), radius: 10, x: 0, y: 4)
-                        
-                        Text(book.title?.prefix(1).uppercased() ?? "A")
-                            .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(.white)
-                    }
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .shadow(color: AppTheme.primary.opacity(0.3), radius: 10, x: 0, y: 5)
                     
-                    Text(book.title ?? "未命名")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppTheme.text)
-                }
-                .padding(.top, 20)
-                .padding(.bottom, 16)
+                            // 书籍图标
+                            VStack {
+                                Image(systemName: "book.closed")
+                                    .font(.system(size: 40, weight: .light))
+                                    .foregroundColor(.white)
+                            }
+                            }
+                        }
+                        .frame(width: 160)
+                        
+                        // 书籍信息
+            VStack(alignment: .leading, spacing: 6) {
+                // 标题
+                Text(book.title ?? "无标题")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppTheme.text)
+                    .lineLimit(1)
                 
-                // 统计信息卡片
-                VStack(spacing: 16) {
-                    // 统计指标
-                    HStack(spacing: 20) {
-                        StatisticView(title: "章节", value: "\(book.chapters?.count ?? 0)", icon: "list.bullet")
-                        
-                        Divider()
-                            .frame(height: 40)
-                        
-                        StatisticView(title: "字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
-                        
-                        Divider()
-                            .frame(height: 40)
-                        
-                        StatisticView(title: "页数", value: "\(estimatedPages)", icon: "book")
+                // 章节信息和字数
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "list.bullet")
+                            .font(.caption2)
+                        Text("\(book.chapters?.count ?? 0)章")
+                            .font(.caption)
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 16)
-                    .background(AppTheme.cardBackground)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-                    
-                    // 时间信息
-                    HStack(spacing: 20) {
-                        if let createdAt = book.createdAt {
-                            TimeInfoView(title: "创建于", value: formattedDate(createdAt), icon: "calendar.badge.plus")
-                        }
-                        
-                        Spacer()
-                        
-                        if let updatedAt = book.updatedAt {
-                            TimeInfoView(title: "更新于", value: formattedDate(updatedAt), icon: "arrow.triangle.2.circlepath")
-                        }
-                    }
-                    .padding(.horizontal)
+                    .foregroundColor(AppTheme.secondaryText)
                 }
-                .padding(.horizontal)
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.caption2)
+                        Text("\(totalWordCount)字")
+                            .font(.caption)
+                    }
+                    .foregroundColor(AppTheme.secondaryText)
+                }
+                
+                // 创建和更新时间
+                if let createdAt = book.createdAt {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.caption2)
+                        Text("创建: \(formattedShortDate(createdAt))")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(AppTheme.secondaryText)
+                }
+                
+                if let updatedAt = book.updatedAt {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.caption2)
+                        Text("更新: \(formattedShortDate(updatedAt))")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(AppTheme.secondaryText)
+                }
+            }
+                        
+                        
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+                    
+                    
+                }
                 
                 // 章节列表
                 VStack(alignment: .leading, spacing: 12) {
@@ -210,19 +232,6 @@ struct BookDetailView: View {
     private var totalWordCount: Int {
         book.chapters?.reduce(0) { $0 + (($1 as? ChapterEntity)?.content?.count ?? 0) } ?? 0
     }
-    
-    private var estimatedPages: Int {
-        // 假设每页约1000字
-        let pages = (totalWordCount + 999) / 1000
-        return max(1, pages)
-    }
-    
-    // 辅助函数：格式化日期
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter.string(from: date)
-    }
 }
 
 // 扩展视图，支持单独设置某些角的圆角
@@ -319,7 +328,7 @@ struct ChapterRow: View {
                         
                         // 最后更新时间
                         if let updatedAt = chapter.updatedAt {
-                            Text("更新于 \(formatDate(updatedAt))")
+                            Text("更新于 \(formattedShortDate(updatedAt))")
                                 .font(.caption)
                                 .foregroundColor(AppTheme.secondaryText)
                         }
@@ -343,13 +352,6 @@ struct ChapterRow: View {
             .padding(.vertical, 12)
         }
         .buttonStyle(PlainButtonStyle())
-    }
-    
-    // 格式化日期
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        return formatter.string(from: date)
     }
 }
 
@@ -459,5 +461,22 @@ struct EditBookView: View {
         chapter2.book = book
         
         return BookDetailView(book: book)
+    }
+}
+
+
+// 宽高比容器视图
+struct AspectRatio<Content: View>: View {
+    private let ratio: CGFloat
+    private let content: Content
+    
+    init(_ ratio: CGFloat, @ViewBuilder content: () -> Content) {
+        self.ratio = ratio
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .aspectRatio(ratio, contentMode: .fit)
     }
 } 

@@ -10,6 +10,11 @@ struct CustomTextEditor: UIViewRepresentable {
         let textView = UITextView()
         textView.delegate = context.coordinator
         textView.font = .systemFont(ofSize: 16)
+        textView.backgroundColor = UIColor(AppTheme.cardBackground)
+        textView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        textView.isScrollEnabled = true
+        textView.autocapitalizationType = .sentences
+        textView.autocorrectionType = .yes
         return textView
     }
     
@@ -242,76 +247,47 @@ struct ChapterEditView: View {
                 }
                 
                 // 编辑器
-                ZStack(alignment: .topTrailing) {
-                    ScrollView {
-                        CustomTextEditor(text: $content, selectedRange: $selectedRange, suggestions: suggestions)
-                            .frame(minHeight: 200)
-                            .focused($isEditing)
-                            .textInputAutocapitalization(.never)
-                            .onChange(of: content) { newValue in
-                                // 更新章节内容和更新时间
-                                chapter.updatedAt = Date()
-                        viewModel.updateChapter(chapter, content: newValue)
-                                if !searchText.isEmpty {
-                                    findMatches()
-                                }
-                            
-                                previousContentLength = newValue.count
-                                
-                                // 取消之前的延迟检测任务
-                                checkTextTask?.cancel()
-                                isTyping = true
-                                
-                                // 检查是否刚刚输入了标点符号
-                                let justEnteredPunctuation = didJustEnterPunctuation(in: newValue)
-                                
-                                // 创建新的延迟检测任务
-                                checkTextTask = Task {
-                                    // 根据是否输入标点符号决定延迟时间
-                                    // 如果刚输入标点符号，我们可以立即检查或稍微等待一下
-                                    let delayTime = justEnteredPunctuation ? 500_000_000 : 1_000_000_000 // 0.5秒或1秒
-                                    try? await Task.sleep(nanoseconds: UInt64(delayTime))
-                                    isTyping = false
-                                    
-                                    if !Task.isCancelled {
-                                        await checkText()
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                    }
-                    .background(AppTheme.background)
+                ZStack {
+                    // 背景色
+                    AppTheme.cardBackground.ignoresSafeArea()
                     
-                    // 添加一个小指示器，显示当前检查状态或建议数量
-                    if isChecking || !suggestions.isEmpty {
-                        Button(action: { showingSidebar.toggle() }) {
-                            HStack(spacing: 4) {
-                                if isChecking {
-                                    ProgressView()
-                                        .scaleEffect(0.7)
-                                } else {
-                                    Text("\(suggestions.count)")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                }
-                                
-                                Image(systemName: "checkmark.bubble.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.white)
+                    CustomTextEditor(text: $content, selectedRange: $selectedRange, suggestions: suggestions)
+                        .focused($isEditing)
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: content) { newValue in
+                            // 更新章节内容和更新时间
+                            chapter.updatedAt = Date()
+                            viewModel.updateChapter(chapter, content: newValue)
+                            if !searchText.isEmpty {
+                                findMatches()
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(suggestions.isEmpty ? AppTheme.secondary : AppTheme.accent)
-                            )
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        
+                            previousContentLength = newValue.count
+                            
+                            // 取消之前的延迟检测任务
+                            checkTextTask?.cancel()
+                            isTyping = true
+                            
+                            // 检查是否刚刚输入了标点符号
+                            let justEnteredPunctuation = didJustEnterPunctuation(in: newValue)
+                            
+                            // 创建新的延迟检测任务
+                            checkTextTask = Task {
+                                // 根据是否输入标点符号决定延迟时间
+                                // 如果刚输入标点符号，我们可以立即检查或稍微等待一下
+                                let delayTime = justEnteredPunctuation ? 500_000_000 : 1_000_000_000 // 0.5秒或1秒
+                                try? await Task.sleep(nanoseconds: UInt64(delayTime))
+                                isTyping = false
+                                
+                                if !Task.isCancelled {
+                                    await checkText()
+                                }
+                            }
                         }
-                        .padding(12)
-                    }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                 }
+                .background(AppTheme.background)
                 
                 // 底部工具栏
                 HStack {
@@ -322,10 +298,10 @@ struct ChapterEditView: View {
                         
                         // 添加创建时间和更新时间
                         if let createdAt = chapter.createdAt, let updatedAt = chapter.updatedAt {
-                            Text("创建: \(formattedDate(createdAt))")
+                            Text("创建: \(formattedShortDate(createdAt))")
                                 .foregroundColor(AppTheme.secondaryText)
                                 .font(.caption2)
-                            Text("更新: \(formattedDate(updatedAt))")
+                            Text("更新: \(formattedShortDate(updatedAt))")
                                 .foregroundColor(AppTheme.secondaryText)
                                 .font(.caption2)
                         }
