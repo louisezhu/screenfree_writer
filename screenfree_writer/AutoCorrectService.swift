@@ -1,48 +1,24 @@
 import Foundation
 
-class DeepseekService {
-    static let shared = DeepseekService()
-    private let apiKey = "sk-8d77d5f3bded4aeea591177a518b012d"
-    private let baseURL = "https://api.deepseek.com/v1/chat/completions"
-    private let fallbackAPIKey = "YOUR_FALLBACK_API_KEY" // 备用 API Key
+class AutoCorrectService {
+    static let shared = AutoCorrectService()
+    private let apiKey = "9667e284-a981-4366-b39c-ff5ab943fb97"
+    private let baseURL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
     
     private init() {}
     
     func checkText(_ text: String) async throws -> [Suggestion] {
         let prompt = """
-        请仔细检查以下文本，找出可能的错别字、用词不当或表达不准确的地方。
-        
-        重要说明：
-        1. 请只针对有问题的具体词语提供修改建议，不要修改整句
-        2. 每个建议必须针对文本中特定的词语或短语，不能是整句
-        3. "original" 字段必须是原文中确实存在的词语或短语，可以在文本中精确找到
-        4. 提供的修改应该尽可能小范围，只修改有问题的部分
-        
-        如果文本完全正确，没有任何问题，请返回如下 JSON：
-        {
-            "status": "perfect",
-            "message": "文本没有任何问题"
-        }
-        
-        如果发现问题，请以JSON格式返回，格式如下：
-        {
-            "status": "has_suggestions",
-            "suggestions": [
-                {
-                    "original": "有问题的词语",
-                    "suggestion": "建议修改为",
-                    "reason": "修改原因"
-                }
-            ]
-        }
-        
-        文本内容：
-        \(text)
+        请仔细检查以下文本，找出可能的别字和用词不当的地方。表达不准确的不需要修改。请只针对有问题的具体词语提供修改建议，不要修改整句。"original" 字段必须是原文中确实存在的词语或短语，可以在文本中精确找到        
+        如果文本没有任何问题，请返回如下 JSON：{"status": "perfect","message": "文本没有任何问题"}
+        如果发现问题（可能有多个词语有问题，则返回多个suggestions），请以JSON格式返回，格式如下：{"status": "has_suggestions","suggestions": [{"original": "有问题的词语","suggestion": "建议修改为","reason": "修改原因"}]}
+        文本内容：\(text)
         """
         
         let requestBody: [String: Any] = [
-            "model": "deepseek-chat",
+            "model": "ep-20250314213504-tcrr5",
             "messages": [
+                ["role": "system", "content": "你是人工智能助手，专注于中文文本校对和修改建议。"],
                 ["role": "user", "content": prompt]
             ],
             "temperature": 0.7
@@ -106,7 +82,7 @@ class DeepseekService {
                     }
                     
                     let decoder = JSONDecoder()
-                    let apiResponse = try decoder.decode(APIResponse.self, from: data)
+                    let apiResponse = try decoder.decode(DoubaoAPIResponse.self, from: data)
                     
                     if let content = apiResponse.choices.first?.message.content {
                         // 提取 JSON 部分
@@ -126,8 +102,21 @@ class DeepseekService {
                         // 尝试解析JSON
                         do {
                             let jsonData = jsonContent.data(using: .utf8)!
-                            let suggestions = try decoder.decode(DeepseekResponse.self, from: jsonData)
-                            return suggestions.suggestions ?? []
+                            let response = try decoder.decode(DoubaoResponse.self, from: jsonData)
+                            
+                            if let apiSuggestions = response.suggestions {
+                                // 将API返回的建议转换为应用使用的Suggestion格式
+                                let suggestions = apiSuggestions.map { apiSuggestion in
+                                    return Suggestion(
+                                        original: apiSuggestion.original,
+                                        suggestion: apiSuggestion.suggestion,
+                                        reason: apiSuggestion.reason
+                                    )
+                                }
+                                return suggestions
+                            } else {
+                                return []
+                            }
                         } catch {
                             print("JSON 解析错误: \(error)")
                             
@@ -193,7 +182,7 @@ class DeepseekService {
     }
 }
 
-struct APIResponse: Codable {
+struct DoubaoAPIResponse: Codable {
     let choices: [Choice]
     
     struct Choice: Codable {
@@ -205,14 +194,14 @@ struct APIResponse: Codable {
     }
 }
 
-struct DeepseekResponse: Codable {
+struct DoubaoResponse: Codable {
     let status: String
     let suggestions: [Suggestion]?
     let message: String?
     
     var hasSuggestions: Bool {
         return status == "has_suggestions" && suggestions != nil && !suggestions!.isEmpty
-    }
+}
 }
 
 struct Suggestion: Codable, Identifiable, Equatable {

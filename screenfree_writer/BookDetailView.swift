@@ -334,8 +334,8 @@ struct ChapterRow: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(chapter.title ?? "未命名")
-                            .font(.body)
+                Text(chapter.title ?? "未命名")
+                    .font(.body)
                             .fontWeight(.medium)
                             .foregroundColor(AppTheme.text)
                         
@@ -357,7 +357,7 @@ struct ChapterRow: View {
                         .foregroundColor(AppTheme.secondaryText)
                     
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                    .font(.caption)
                         .foregroundColor(AppTheme.secondaryText)
                 }
             }
@@ -502,7 +502,7 @@ struct EditBookView: View {
         
         return BookDetailView(book: book)
     }
-}
+} 
 
 
 // 宽高比容器视图

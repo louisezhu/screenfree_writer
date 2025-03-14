@@ -13,8 +13,13 @@ struct CustomTextEditor: UIViewRepresentable {
         textView.backgroundColor = UIColor(AppTheme.cardBackground)
         textView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         textView.isScrollEnabled = true
-        textView.autocapitalizationType = .sentences
-        textView.autocorrectionType = .yes
+        
+        // 修改输入法相关设置，确保中文输入正常工作
+        textView.autocapitalizationType = .none // 改为none以避免自动大写干扰中文输入
+        textView.autocorrectionType = .no // 关闭自动更正，避免干扰中文输入法
+        textView.smartQuotesType = .no // 关闭智能引号
+        textView.smartDashesType = .no // 关闭智能破折号
+        textView.smartInsertDeleteType = .no // 关闭智能插入删除
         
         // 设置初始文本和光标位置
         textView.text = text
@@ -40,78 +45,83 @@ struct CustomTextEditor: UIViewRepresentable {
             // 记录当前光标位置
             let viewSelectedRange = uiView.selectedRange.location < uiView.text.count ? uiView.selectedRange : NSRange(location: uiView.text.count, length: 0)
             
-            // 创建富文本
-            let attributedString = NSMutableAttributedString(string: text)
-            
-            // 设置基本样式
-            attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 16), range: NSRange(location: 0, length: text.count))
-            
-            // 高亮所有需要修改的文本，但限制在各自的上下文范围内
-            for suggestion in suggestions {
-                if !suggestion.contextText.isEmpty {
-                    // 使用上下文信息限制高亮范围
-                    let segmentStartIndex = max(0, suggestion.contextStartPosition)
-                    let segmentEndIndex = min(text.count, segmentStartIndex + suggestion.contextText.count)
-                    
-                    if segmentStartIndex < segmentEndIndex && segmentEndIndex <= text.count {
-                        // 构建段落范围的NSRange
-                        let segmentRange = NSRange(location: segmentStartIndex, length: segmentEndIndex - segmentStartIndex)
+            // 只在没有标记文本时更新文本内容
+            if uiView.markedTextRange == nil {
+                // 创建富文本
+                let attributedString = NSMutableAttributedString(string: text)
+                
+                // 设置基本样式
+                attributedString.addAttribute(.font, value: UIFont.systemFont(ofSize: 16), range: NSRange(location: 0, length: text.count))
+                
+                // 高亮所有需要修改的文本，但限制在各自的上下文范围内
+                for suggestion in suggestions {
+                    if !suggestion.contextText.isEmpty {
+                        // 使用上下文信息限制高亮范围
+                        let segmentStartIndex = max(0, suggestion.contextStartPosition)
+                        let segmentEndIndex = min(text.count, segmentStartIndex + suggestion.contextText.count)
                         
-                        // 在段落范围内查找匹配项
+                        if segmentStartIndex < segmentEndIndex && segmentEndIndex <= text.count {
+                            // 构建段落范围的NSRange
+                            let segmentRange = NSRange(location: segmentStartIndex, length: segmentEndIndex - segmentStartIndex)
+                            
+                            // 在段落范围内查找匹配项
+                            let nsText = text as NSString
+                            var searchRange = segmentRange
+                            var foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
+                            
+                            while foundRange.location != NSNotFound && NSLocationInRange(foundRange.location, segmentRange) {
+                                // 使用黄色背景和红色下划线突出显示
+                                attributedString.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: foundRange)
+                                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: foundRange)
+                                attributedString.addAttribute(.underlineColor, value: UIColor.red, range: foundRange)
+                                
+                                // 更新搜索范围，继续查找下一个匹配项，但仍限制在段落内
+                                let newLocation = foundRange.location + foundRange.length
+                                let newLength = segmentRange.location + segmentRange.length - newLocation
+                                if newLength > 0 {
+                                    searchRange = NSRange(location: newLocation, length: newLength)
+                                    foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
+                                } else {
+                                    break
+                                }
+                            }
+                        }
+                    } else {
+                        // 向后兼容：如果没有上下文信息，使用原来的方法
                         let nsText = text as NSString
-                        var searchRange = segmentRange
+                        var searchRange = NSRange(location: 0, length: nsText.length)
                         var foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
                         
-                        while foundRange.location != NSNotFound && NSLocationInRange(foundRange.location, segmentRange) {
-                            // 使用黄色背景和红色下划线突出显示
+                        while foundRange.location != NSNotFound {
                             attributedString.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: foundRange)
                             attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: foundRange)
                             attributedString.addAttribute(.underlineColor, value: UIColor.red, range: foundRange)
                             
-                            // 更新搜索范围，继续查找下一个匹配项，但仍限制在段落内
-                            let newLocation = foundRange.location + foundRange.length
-                            let newLength = segmentRange.location + segmentRange.length - newLocation
-                            if newLength > 0 {
-                                searchRange = NSRange(location: newLocation, length: newLength)
-                                foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
-                            } else {
-                                break
-                            }
+                            searchRange = NSRange(location: foundRange.location + foundRange.length, length: nsText.length - (foundRange.location + foundRange.length))
+                            foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
                         }
                     }
+                }
+                
+                // 更新文本视图，使用无动画模式避免干扰输入
+                UIView.performWithoutAnimation {
+                    uiView.attributedText = attributedString
+                }
+                
+                // 更新上次的建议记录
+                context.coordinator.lastSuggestions = suggestions
+                
+                // 恢复光标位置 - 优先使用视图中的选择位置
+                if textChanged {
+                    // 如果是文本改变，使用传入的选择范围
+                    uiView.selectedRange = currentSelectedRange
                 } else {
-                    // 向后兼容：如果没有上下文信息，使用原来的方法
-                    let nsText = text as NSString
-                    var searchRange = NSRange(location: 0, length: nsText.length)
-                    var foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
-                    
-                    while foundRange.location != NSNotFound {
-                        attributedString.addAttribute(.backgroundColor, value: UIColor.yellow.withAlphaComponent(0.3), range: foundRange)
-                        attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: foundRange)
-                        attributedString.addAttribute(.underlineColor, value: UIColor.red, range: foundRange)
-                        
-                        searchRange = NSRange(location: foundRange.location + foundRange.length, length: nsText.length - (foundRange.location + foundRange.length))
-                        foundRange = nsText.range(of: suggestion.original, options: [], range: searchRange)
-                    }
+                    // 如果只是建议改变，保持当前编辑位置
+                    uiView.selectedRange = viewSelectedRange
                 }
             }
-            
-            // 更新文本视图
-            uiView.attributedText = attributedString
-            
-            // 恢复光标位置 - 优先使用视图中的选择位置
-            if textChanged {
-                // 如果是文本改变，使用传入的选择范围
-                uiView.selectedRange = currentSelectedRange
-            } else {
-                // 如果只是建议改变，保持当前编辑位置
-                uiView.selectedRange = viewSelectedRange
-            }
-            
-            // 更新上次的建议记录
-            context.coordinator.lastSuggestions = suggestions
-        } else if uiView.selectedRange.location != currentSelectedRange.location {
-            // 如果只是光标位置需要更新
+        } else if uiView.selectedRange.location != currentSelectedRange.location && uiView.markedTextRange == nil {
+            // 如果只是光标位置需要更新，且没有正在组合的文本
             uiView.selectedRange = currentSelectedRange
         }
     }
@@ -143,14 +153,17 @@ struct CustomTextEditor: UIViewRepresentable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            // 更新绑定的文本值
-            parent.text = textView.text
+            // 更新绑定的文本值 - 仅当没有正在组合的文本时才更新
+            // 这对于中文输入法非常重要，避免拼音被直接当作最终输入
+            if textView.markedTextRange == nil {
+                parent.text = textView.text
+                
+                // 更新光标位置
+                parent.selectedRange = textView.selectedRange
+            }
             
-            // 更新光标位置
-            parent.selectedRange = textView.selectedRange
-            
-            // 如果有建议，应用高亮
-            if !lastSuggestions.isEmpty {
+            // 只有当没有正在组合的文本，并且有建议时才应用高亮
+            if textView.markedTextRange == nil && !lastSuggestions.isEmpty {
                 // 记录当前光标位置
                 let selectedRange = textView.selectedRange
                 
@@ -210,8 +223,10 @@ struct CustomTextEditor: UIViewRepresentable {
                     }
                 }
                 
-                // 更新文本视图
-                textView.attributedText = attributedString
+                // 更新文本视图，使用无动画模式避免干扰输入
+                UIView.performWithoutAnimation {
+                    textView.attributedText = attributedString
+                }
                 
                 // 恢复光标位置，确保不会超出文本长度
                 if selectedRange.location <= textView.text.count {
@@ -222,8 +237,25 @@ struct CustomTextEditor: UIViewRepresentable {
             }
         }
         
+        // 添加对组合输入的特殊处理
+        func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            // 允许所有文本更改，但特殊处理回车键
+            if text == "\n" {
+                // 如果有标记文本（未完成的组合输入），先结束组合
+                if textView.markedTextRange != nil {
+                    textView.unmarkText()
+                }
+                // 进行其他回车键处理...
+            }
+            
+            return true // 允许所有文本变更
+        }
+        
         func textViewDidChangeSelection(_ textView: UITextView) {
-            parent.selectedRange = textView.selectedRange
+            // 只在没有标记文本时更新选择范围
+            if textView.markedTextRange == nil {
+                parent.selectedRange = textView.selectedRange
+            }
         }
     }
 }
@@ -475,15 +507,18 @@ struct ChapterEditView: View {
         }
 
         print("检查段落: \"\(segmentToCheck)\"") // 调试用，可以在发布版中删除
-        
-
+        checkedParagraphs.insert(segmentToCheck)
+        lastCheckedParagraph = segmentToCheck
         isChecking = true
         currentTextIsPerfect = false
         
         do {
+            // 延迟0.5秒
+            try await Task.sleep(nanoseconds: 500_000_000)
+            
             // 创建一个检测任务，并赋予它一个变量，这样可以在任务取消时捕获到
             let task = Task {
-                try await DeepseekService.shared.checkText(segmentToCheck)
+                try await AutoCorrectService.shared.checkText(segmentToCheck)
             }
             
             // 设置一个超时控制
@@ -529,9 +564,6 @@ struct ChapterEditView: View {
                 } + contextualisedSuggestions
             }
             
-            // 将段落添加到已检查集合中
-            checkedParagraphs.insert(segmentToCheck)
-            lastCheckedParagraph = segmentToCheck
         } catch {
             // 处理错误，但如果是取消错误则忽略
             let nsError = error as NSError

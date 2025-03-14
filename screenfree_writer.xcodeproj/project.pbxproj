@@ -27,7 +27,7 @@
 		B77D89B02D833C4F005D2209 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89AB2D833C4F005D2209 /* CloudKitService.swift */; };
 		B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AC2D833C4F005D2209 /* Assets.xcassets */; };
 		B77D89B22D833C4F005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AD2D833C4F005D2209 /* Preview Content */; };
-		B77D89BA2D834658005D2209 /* DeepseekService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B32D834658005D2209 /* DeepseekService.swift */; };
+		B77D89BA2D834658005D2209 /* DoubaoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B32D834658005D2209 /* DoubaoService.swift */; };
 		B77D89BB2D834658005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89B42D834658005D2209 /* Preview Content */; };
 		B77D89BC2D834658005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89B52D834658005D2209 /* Assets.xcassets */; };
 		B77D89BD2D834658005D2209 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */; };
@@ -79,7 +79,7 @@
 		B77D89AB2D833C4F005D2209 /* CloudKitService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
 		B77D89AC2D833C4F005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B77D89AD2D833C4F005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
-		B77D89B32D834658005D2209 /* DeepseekService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepseekService.swift; sourceTree = "<group>"; };
+		B77D89B32D834658005D2209 /* DoubaoService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DoubaoService.swift; sourceTree = "<group>"; };
 		B77D89B42D834658005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		B77D89B52D834658005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B77D89B72D834658005D2209 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
@@ -89,6 +89,8 @@
 		B77D89C32D834CE0005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncStatusManager.swift; sourceTree = "<group>"; };
 		B77D89C52D834CE0005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		B78E97FF2D84695700D319F8 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
+		B78E98002D84695700D319F8 /* screenfree_writer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = screenfree_writer.xcodeproj; sourceTree = "<group>"; };
 		B7D465822D832B140042B162 /* screenfree_writer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = screenfree_writer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465992D832B170042B162 /* screenfree_writerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465A32D832B170042B162 /* screenfree_writerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +121,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B78E98012D84695700D319F8 /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+		};
 		B7D465792D832B140042B162 = {
 			isa = PBXGroup;
 			children = (
@@ -153,7 +160,7 @@
 				B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */,
 				B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */,
 				B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */,
-				B77D89B32D834658005D2209 /* DeepseekService.swift */,
+				B77D89B32D834658005D2209 /* DoubaoService.swift */,
 				B77D89B42D834658005D2209 /* Preview Content */,
 				B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */,
 				B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */,
@@ -169,6 +176,8 @@
 				B75C64242D832FFF00BB5561 /* ProfileView.swift */,
 				B75C64292D83300000BB5561 /* screenfree_writer.entitlements */,
 				B75C64332D83300000BB5561 /* screenfree_writer.xcdatamodeld */,
+				B78E97FE2D84695700D319F8 /* screenfree_writer.xcdatamodeld */,
+				B78E98002D84695700D319F8 /* screenfree_writer.xcodeproj */,
 				B75C642F2D83300000BB5561 /* screenfree_writerApp.swift */,
 				B75C64252D832FFF00BB5561 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C64312D83300000BB5561 /* WritingView.swift */,
@@ -267,6 +276,12 @@
 			mainGroup = B7D465792D832B140042B162;
 			productRefGroup = B7D465832D832B140042B162 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = B78E98012D84695700D319F8 /* Products */;
+					ProjectRef = B78E98002D84695700D319F8 /* screenfree_writer.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				B7D465812D832B140042B162 /* screenfree_writer */,
@@ -318,7 +333,7 @@
 				B75C643A2D83300000BB5561 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B75C64372D83300000BB5561 /* Persistence.swift in Sources */,
 				B75C64422D83300000BB5561 /* screenfree_writerApp.swift in Sources */,
-				B77D89BA2D834658005D2209 /* DeepseekService.swift in Sources */,
+				B77D89BA2D834658005D2209 /* DoubaoService.swift in Sources */,
 				B77D89BD2D834658005D2209 /* screenfree_writer.xcdatamodeld in Sources */,
 				B77D89AF2D833C4F005D2209 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64362D83300000BB5561 /* CoreDataManager.swift in Sources */,
@@ -766,6 +781,16 @@
 			);
 			currentVersion = B77D89C22D834CE0005D2209 /* ScreenFreeWriter.xcdatamodel */;
 			path = ScreenFreeWriter.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B78E97FE2D84695700D319F8 /* screenfree_writer.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B78E97FF2D84695700D319F8 /* screenfree_writer.xcdatamodel */,
+			);
+			currentVersion = B78E97FF2D84695700D319F8 /* screenfree_writer.xcdatamodel */;
+			path = screenfree_writer.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};
