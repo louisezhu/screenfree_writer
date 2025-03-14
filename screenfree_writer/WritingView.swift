@@ -94,23 +94,36 @@ struct BookCard: View {
             Text("章节: \(book.chapters?.count ?? 0)")
                 .font(.caption)
                 .foregroundColor(.secondary)
+
+            Text("字数: \(totalWordCount ?? 0)")
+                .font(.caption)
+                .foregroundColor(.secondary)
             
-            HStack {
-                Text("上次同步时间： \(book.updatedAt?.formatted(.dateTime.month().day().year()) ?? "未同步")")
-                    .font(.caption)
+            // 添加创建时间显示
+            if let createdAt = book.createdAt {
+                Text("创建: \(formattedDate(createdAt))")
+                    .font(.caption2)
                     .foregroundColor(.secondary)
+            }
+            
+            // 添加更新时间显示
+            if let updatedAt = book.updatedAt {
+                Text("更新: \(formattedDate(updatedAt))")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            // 云同步信息
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "icloud")
+                        .font(.caption2)
+                    Text(lastSyncTime != nil ? "同步于\(formattedDate(lastSyncTime!))" : "未同步")
+                        .font(.caption2)
+                }
+                .foregroundColor(lastSyncTime != nil ? .green : .secondary)
                 
                 Spacer()
-                
-                if let syncTime = lastSyncTime {
-                    HStack(spacing: 2) {
-                        Image(systemName: "checkmark.icloud")
-                            .font(.caption2)
-                        Text(syncTime.formatted(.dateTime.hour().minute()))
-                            .font(.caption2)
-                    }
-                    .foregroundColor(.secondary)
-                }
             }
         }
         .padding()
@@ -162,13 +175,20 @@ struct BookCard: View {
         let chapters = book.chapters?.allObjects as? [ChapterEntity] ?? []
         return chapters.reduce(0) { $0 + ($1.content?.count ?? 0) }
     }
-    
+
     private var backgroundColor: Color {
         #if os(macOS)
         return Color(NSColor.windowBackgroundColor)
         #else
         return Color(UIColor.systemBackground)
         #endif
+    }
+    
+    // 辅助函数：格式化日期
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
     }
     
     struct AspectRatio<Content: View>: View {

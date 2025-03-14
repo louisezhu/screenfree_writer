@@ -1,9 +1,6 @@
 import SwiftUI
 import UIKit
 
-// 导入本地拼写检查器
-import Foundation
-
 struct CustomTextEditor: UIViewRepresentable {
     @Binding var text: String
     @Binding var selectedRange: NSRange
@@ -251,17 +248,13 @@ struct ChapterEditView: View {
                         .focused($isEditing)
                         .textInputAutocapitalization(.never)
                         .onChange(of: content) { newValue in
+                            // 更新章节内容和更新时间
+                            chapter.updatedAt = Date()
                             viewModel.updateChapter(chapter, content: newValue)
                             if !searchText.isEmpty {
                                 findMatches()
                             }
-                            
-                            // 检查内容变化程度
-                            if abs(previousContentLength - newValue.count) > 20 {
-                                // 如果内容有较大变化（超过20个字符），重置检查记录
-                                checkedParagraphs.removeAll()
-                                print("内容变化较大，重置检查记录")
-                            }
+                        
                             previousContentLength = newValue.count
                             
                             // 取消之前的延迟检测任务
@@ -289,9 +282,20 @@ struct ChapterEditView: View {
                 
                 // 底部工具栏
                 HStack {
-                    HStack(spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("\(content.count)字")
                             .foregroundColor(.secondary)
+                            .font(.caption)
+                        
+                        // 添加创建时间和更新时间
+                        if let createdAt = chapter.createdAt, let updatedAt = chapter.updatedAt {
+                            Text("创建: \(formattedDate(createdAt))")
+                                .foregroundColor(.secondary)
+                                .font(.caption2)
+                            Text("更新: \(formattedDate(updatedAt))")
+                                .foregroundColor(.secondary)
+                                .font(.caption2)
+                        }
                     }
                     
                     Spacer()
@@ -356,8 +360,10 @@ struct ChapterEditView: View {
             previousContentLength = content.count
             isEditing = true
             undoManager = UndoManager()
-            // 每次视图出现时重置检查记录
-            checkedParagraphs.removeAll()
+            
+            // 设置光标位置到文本末尾
+            selectedRange = NSRange(location: content.count, length: 0)
+            
             Task {
                 await checkText()
             }
@@ -511,6 +517,13 @@ struct ChapterEditView: View {
     private func didJustEnterPunctuation(in newValue: String) -> Bool {
         guard let lastChar = newValue.last else { return false }
         return "，。！？,.!?".contains(lastChar)
+    }
+    
+    // 辅助函数：格式化日期
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
     }
     
     private func findMatches() {

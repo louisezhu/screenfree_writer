@@ -15,6 +15,17 @@ struct BookDetailView: View {
                     StatCard(title: "章节数", value: "\(book.chapters?.count ?? 0)", icon: "list.bullet")
                     StatCard(title: "总字数", value: "\(totalWordCount)", icon: "chart.bar.fill")
                 }
+                
+                // 添加时间信息部分
+                HStack {
+                    if let createdAt = book.createdAt {
+                        StatCard(title: "创建时间", value: formattedDate(createdAt), icon: "calendar.badge.plus")
+                    }
+                    
+                    if let updatedAt = book.updatedAt {
+                        StatCard(title: "更新时间", value: formattedDate(updatedAt), icon: "arrow.triangle.2.circlepath")
+                    }
+                }
             }
             
             // 章节列表
@@ -49,6 +60,13 @@ struct BookDetailView: View {
     
     private var totalWordCount: Int {
         book.chapters?.reduce(0) { $0 + (($1 as? ChapterEntity)?.content?.count ?? 0) } ?? 0
+    }
+    
+    // 辅助函数：格式化日期
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
     }
 }
 

@@ -6,6 +6,8 @@ import UIKit
 #endif
 
 struct ProfileView: View {
+    @StateObject private var viewModel = BookViewModel()
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -28,9 +30,9 @@ struct ProfileView: View {
                                 .padding(.horizontal)
                             
                             VStack(spacing: 8) {
-                                StatRow(title: "总字数", value: "0", icon: "chart.bar.fill")
-                                StatRow(title: "总章节数", value: "0", icon: "list.bullet")
-                                StatRow(title: "总书籍数", value: "0", icon: "book.closed.fill")
+                                StatRow(title: "总书籍数", value: formattedNumber(viewModel.books.count), icon: "book.closed.fill")
+                                StatRow(title: "总章节数", value: formattedNumber(totalChaptersCount), icon: "list.bullet")
+                                StatRow(title: "总字数", value: formattedNumber(totalWordsCount), icon: "chart.bar.fill")
                             }
                             .padding()
                             .background(Color(.systemBackground))
@@ -93,6 +95,36 @@ struct ProfileView: View {
                 }
             }
         }
+    }
+    
+    // 计算总章节数
+    private var totalChaptersCount: Int {
+        var count = 0
+        for book in viewModel.books {
+            count += book.chapters?.count ?? 0
+        }
+        return count
+    }
+    
+    // 计算总字数
+    private var totalWordsCount: Int {
+        var count = 0
+        for book in viewModel.books {
+            if let chapters = book.chapters?.allObjects as? [ChapterEntity] {
+                for chapter in chapters {
+                    count += chapter.content?.count ?? 0
+                }
+            }
+        }
+        return count
+    }
+    
+    // 格式化数字，使大数字更易读
+    private func formattedNumber(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
     }
 }
 
