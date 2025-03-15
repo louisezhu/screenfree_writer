@@ -82,8 +82,22 @@ struct CustomTextEditor: UIViewRepresentable {
         textView.returnKeyType = .default
         
         // 在多设备和多版本iOS上进一步确保无输入附件视图
-        if let window = UIApplication.shared.windows.first {
-            try? textView.perform(Selector(("_updateInputAccessoryView")))
+        // 使用iOS 15的新API获取窗口
+        let keyWindow: UIWindow?
+        if #available(iOS 15.0, *) {
+            keyWindow = UIApplication.shared.connectedScenes
+                .filter { $0.activationState == .foregroundActive }
+                .first(where: { $0 is UIWindowScene })
+                .flatMap { $0 as? UIWindowScene }?.windows
+                .first(where: \.isKeyWindow)
+        } else {
+            keyWindow = UIApplication.shared.windows.first(where: \.isKeyWindow)
+        }
+        
+        if let window = keyWindow {
+            // 移除可能导致崩溃的私有API调用
+            // try? textView.perform(Selector(("_updateInputAccessoryView")))
+            
             DispatchQueue.main.async {
                 // 在下一个主循环重新加载输入视图，确保清除任何自动创建的附件视图
                 textView.reloadInputViews()
@@ -340,15 +354,28 @@ struct CustomTextEditor: UIViewRepresentable {
             
             // 在文本视图获得焦点时清理可能的约束冲突
             DispatchQueue.main.async {
-                // 获取根视图控制器并清理键盘约束
-                if let window = UIApplication.shared.windows.first,
+                // 获取根视图控制器并清理键盘约束，使用新的iOS 15+ API
+                let keyWindow: UIWindow?
+                if #available(iOS 15.0, *) {
+                    keyWindow = UIApplication.shared.connectedScenes
+                        .filter { $0.activationState == .foregroundActive }
+                        .first(where: { $0 is UIWindowScene })
+                        .flatMap { $0 as? UIWindowScene }?.windows
+                        .first(where: \.isKeyWindow)
+                } else {
+                    keyWindow = UIApplication.shared.windows.first(where: \.isKeyWindow)
+                }
+                
+                if let window = keyWindow,
                    let rootView = window.rootViewController?.view {
                     rootView.cleanupKeyboardConstraints()
                 }
                 
-                // 再次确保没有输入附件视图
-                textView.setValue(nil, forKey: "_inputAccessoryView")
-                textView.reloadInputViews()
+                // 再次确保没有输入附件视图 - 使用安全的方式
+                if let noAccessoryTextView = textView as? NoAccessoryTextView {
+                    noAccessoryTextView.setValue(nil, forKey: "_inputAccessoryView")
+                    noAccessoryTextView.reloadInputViews()
+                }
             }
             
             // 在Debug模式下监控约束变化
@@ -561,8 +588,9 @@ struct ChapterEditView: View {
             undoManager?.removeAllActions()
             checkTextTask?.cancel()
             
-            // 移除键盘通知监听器
-            NotificationCenter.default.removeObserver(self)
+            // 移除键盘通知监听器 - 只移除我们在onAppear中添加的观察者
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
         }
         // 添加轻触手势来关闭键盘
         .gesture(
@@ -1163,7 +1191,19 @@ extension UITextView {
         // 收集可能存在冲突的约束
         var keyboardConstraints: [NSLayoutConstraint] = []
         
-        if let window = self.window {
+        // 获取窗口，使用新的iOS 15+ API
+        let keyWindow: UIWindow?
+        if #available(iOS 15.0, *) {
+            keyWindow = UIApplication.shared.connectedScenes
+                .filter { $0.activationState == .foregroundActive }
+                .first(where: { $0 is UIWindowScene })
+                .flatMap { $0 as? UIWindowScene }?.windows
+                .first(where: \.isKeyWindow)
+        } else {
+            keyWindow = UIApplication.shared.windows.first(where: \.isKeyWindow)
+        }
+        
+        if let window = keyWindow {
             // 查找包含"keyboard"、"input"、"accessory"关键词的约束
             func findKeyboardConstraints(in view: UIView) {
                 for constraint in view.constraints {
@@ -1195,19 +1235,33 @@ extension UITextView {
 extension UIView {
     // 清理相关的约束冲突
     func cleanupKeyboardConstraints() {
-        // 查找与键盘相关的约束
+        // 查找与键盘相关的约束，但使用更安全的条件
+        // 避免使用过于笼统的字符串匹配，专注于已知的问题约束
         let constraintsToRemove = constraints.filter { constraint in
             let description = constraint.description.lowercased()
-            return description.contains("keyboard") || 
-                   description.contains("inputaccessory") || 
-                   description.contains("inputassistant")
+            // 只移除明确与键盘或输入附件视图相关的约束
+            return (description.contains("keyboard") && description.contains("height")) || 
+                   (description.contains("inputaccessory") && description.contains("height")) ||
+                   (description.contains("bottom") && description.contains("keyboard"))
         }
         
-        // 停用这些约束
-        NSLayoutConstraint.deactivate(constraintsToRemove)
+        if !constraintsToRemove.isEmpty {
+            // 只在找到约束时打印和停用，避免不必要的操作
+            #if DEBUG
+            print("移除键盘约束: \(constraintsToRemove.count)个")
+            #endif
+            
+            // 停用这些约束
+            NSLayoutConstraint.deactivate(constraintsToRemove)
+        }
         
-        // 递归处理子视图
+        // 递归处理子视图，但避免处理某些系统视图
         for subview in subviews {
+            // 跳过处理系统键盘视图，避免干扰系统行为
+            if String(describing: type(of: subview)).contains("Keyboard") ||
+               String(describing: type(of: subview)).contains("Input") {
+                continue
+            }
             subview.cleanupKeyboardConstraints()
         }
     }

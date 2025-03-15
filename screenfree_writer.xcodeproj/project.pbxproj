@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B7589CD22D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */; };
 		B7589CD32D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7589CCF2D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld */; };
 		B7589CD42D8588F900B99122 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7589CCE2D8588F900B99122 /* screenfree_writer.xcdatamodeld */; };
 		B75C64352D83300000BB5561 /* BookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75C64202D832FFF00BB5561 /* BookDetailView.swift */; };
@@ -68,7 +67,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc"; sourceTree = "<group>"; };
 		B7589CD02D8588F900B99122 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B7589CD12D8588F900B99122 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
 		B75C64202D832FFF00BB5561 /* BookDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookDetailView.swift; sourceTree = "<group>"; };
@@ -194,7 +192,6 @@
 				B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C642A2D83300000BB5561 /* BookViewModel.swift */,
 				B75C64302D83300000BB5561 /* ChapterEditView.swift */,
-				B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */,
 				B7589CCE2D8588F900B99122 /* screenfree_writer.xcdatamodeld */,
 				B7589CCF2D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C64232D832FFF00BB5561 /* ContentView.swift */,
@@ -338,7 +335,6 @@
 				B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */,
 				B77D89C82D834CE0005D2209 /* Assets.xcassets in Resources */,
 				B7A378402D8472480090C586 /* Preview Content in Resources */,
-				B7589CD22D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */,
 				B7A3783F2D8472480090C586 /* Assets.xcassets in Resources */,
 				B77D89BC2D834658005D2209 /* Assets.xcassets in Resources */,
 			);

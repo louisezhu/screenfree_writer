@@ -11,6 +11,7 @@ struct BookDetailView: View {
     @State private var showingRenameSheet = false
     @State private var newChapterTitle: String = ""
     @State private var refreshID = UUID()
+    @State private var hasAppeared = false
     @Environment(\.dismiss) private var dismiss
     let book: BookEntity
     
@@ -178,10 +179,6 @@ struct BookDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
-                Button(action: { showingNewChapterSheet = true }) {
-                        Label("新建章节", systemImage: "plus")
-                    }
-                    
                     Button(action: {
                         // 只设置标题
                         editingBookTitle = book.title ?? ""
@@ -243,6 +240,16 @@ struct BookDetailView: View {
             }
         } message: {
             Text("此操作不可撤销，书籍中的所有章节将被永久删除。")
+        }
+        .onAppear {
+            if !hasAppeared {
+                hasAppeared = true
+            }
+        }
+        .onDisappear {
+            if hasAppeared && book.chapters?.count ?? 0 > 0 {
+                viewModel.updateBookTimestamp(book)
+            }
         }
     }
     
@@ -356,9 +363,12 @@ struct TimeInfoView: View {
 
 struct ChapterRow: View {
     let chapter: ChapterEntity
+    @State private var navigateToChapter = false
     
     var body: some View {
-        NavigationLink(destination: ChapterEditView(chapter: chapter)) {
+        Button(action: {
+            navigateToChapter = true
+        }) {
             HStack {
                 // 左侧图标和标题
                 HStack(spacing: 12) {
@@ -374,8 +384,8 @@ struct ChapterRow: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                Text(chapter.title ?? "未命名")
-                    .font(.body)
+                        Text(chapter.title ?? "未命名")
+                            .font(.body)
                             .fontWeight(.medium)
                             .foregroundColor(AppTheme.text)
                         
@@ -397,7 +407,7 @@ struct ChapterRow: View {
                         .foregroundColor(AppTheme.secondaryText)
                     
                     Image(systemName: "chevron.right")
-                    .font(.caption)
+                        .font(.caption)
                         .foregroundColor(AppTheme.secondaryText)
                 }
             }
@@ -406,6 +416,12 @@ struct ChapterRow: View {
             .contentShape(Rectangle()) // 确保整个区域都可点击
         }
         .buttonStyle(PlainButtonStyle())
+        .background(
+            NavigationLink(destination: ChapterEditView(chapter: chapter), isActive: $navigateToChapter) {
+                EmptyView()
+            }
+            .opacity(0)
+        )
     }
     
     // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）

@@ -9,6 +9,7 @@ struct WritingView: View {
     @StateObject private var viewModel = BookViewModel()
     @State private var showingNewBookSheet = false
     @State private var sortOption: SortOption = .name
+    @State private var refreshID = UUID()
     
     enum SortOption: String, CaseIterable {
         case name = "名称"
@@ -21,6 +22,7 @@ struct WritingView: View {
             VStack {
                 if viewModel.books.isEmpty {
                     ContentUnavailableView("还没有书籍", systemImage: "book.closed")
+                        .id(refreshID)
                 } else {
                     ScrollView {
                         LazyVGrid(columns: [
@@ -29,12 +31,18 @@ struct WritingView: View {
                             GridItem(.flexible())
                         ], spacing: 20) {
                             ForEach(viewModel.books) { book in
-                                NavigationLink(destination: BookDetailView(book: book)) {
+                                NavigationLink(destination: BookDetailView(book: book)
+                                    .onDisappear {
+                                        self.viewModel.fetchBooks()
+                                    }
+                                ) {
                                     BookCard(book: book)
+                                        .id("\(book.id?.uuidString ?? "")-\(refreshID)")
                                 }
                             }
                         }
                         .padding()
+                        .id(refreshID)
                     }
                 }
             }
@@ -47,9 +55,25 @@ struct WritingView: View {
                         Image(systemName: "plus")
                     }
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        refreshID = UUID()
+                        viewModel.fetchBooks()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
             }
-            .sheet(isPresented: $showingNewBookSheet) {
+            .sheet(isPresented: $showingNewBookSheet, onDismiss: {
+                refreshID = UUID()
+                viewModel.fetchBooks()
+            }) {
                 NewBookView(viewModel: viewModel)
+            }
+            .onAppear {
+                refreshID = UUID()
+                viewModel.fetchBooks()
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -59,13 +83,12 @@ struct WritingView: View {
 struct BookCard: View {
     let book: BookEntity
     @StateObject private var viewModel = BookViewModel()
+    @State private var localRefreshID = UUID()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 书籍封面
             AspectRatio(3/4) {
                 ZStack {
-                    // 渐变背景
                     LinearGradient(
                         gradient: Gradient(colors: [
                             AppTheme.primary.opacity(0.7),
@@ -77,7 +100,6 @@ struct BookCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: AppTheme.primary.opacity(0.3), radius: 10, x: 0, y: 5)
                     
-                    // 书籍图标
                     VStack {
                         Image(systemName: "book.closed")
                             .font(.system(size: 40, weight: .light))
@@ -86,16 +108,13 @@ struct BookCard: View {
                 }
             }
             
-            // 书籍信息
             VStack(alignment: .leading, spacing: 6) {
-                // 标题
                 Text(book.title ?? "无标题")
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(AppTheme.text)
                     .lineLimit(1)
                 
-                // 章节信息和字数
                 HStack {
                     HStack(spacing: 4) {
                         Image(systemName: "list.bullet")
@@ -115,7 +134,6 @@ struct BookCard: View {
                     .foregroundColor(AppTheme.secondaryText)
                 }
                 
-                // 创建和更新时间
                 if let createdAt = book.createdAt {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar.badge.plus")
@@ -152,6 +170,10 @@ struct BookCard: View {
                 Label("删除书籍", systemImage: "trash")
             }
         }
+        .id(localRefreshID)
+        .onAppear {
+            localRefreshID = UUID()
+        }
     }
     
     private var totalWordCount: Int {
@@ -159,15 +181,12 @@ struct BookCard: View {
         return chapters.reduce(0) { $0 + countWords($1.content ?? "") }
     }
     
-    // 辅助函数：准确计算中文和英文字数（不包括标点、空格和换行）
     private func countWords(_ text: String) -> Int {
-        // 移除所有标点符号、空格和换行
         let pattern = "[\\p{P}\\p{Z}\\p{C}]"
         let regex = try? NSRegularExpression(pattern: pattern, options: [])
         let range = NSRange(location: 0, length: text.utf16.count)
         let cleanText = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
         
-        // 返回清理后的文本长度
         return cleanText?.count ?? 0
     }
     
@@ -189,9 +208,8 @@ struct BookCard: View {
 
 #Preview {
     WritingView()
-} 
+}
 
-// 辅助函数：格式化日期
 public func formattedShortDate(_ date: Date) -> String {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd HH:mm"

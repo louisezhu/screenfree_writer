@@ -13,6 +13,9 @@ class BookViewModel: ObservableObject {
     
     // MARK: - 本地数据操作
     func fetchBooks() {
+        // 刷新托管对象上下文
+        context.refreshAllObjects()
+        
         let request = NSFetchRequest<BookEntity>(entityName: "BookEntity")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \BookEntity.updatedAt, ascending: false)]
         
@@ -40,6 +43,12 @@ class BookViewModel: ObservableObject {
         saveContext()
     }
     
+    // 只更新书籍的时间戳，不更改其他信息
+    func updateBookTimestamp(_ book: BookEntity) {
+        book.updatedAt = Date()
+        saveContext()
+    }
+    
     func deleteBook(_ book: BookEntity) {
         context.delete(book)
         saveContext()
@@ -62,6 +71,9 @@ class BookViewModel: ObservableObject {
         chapter.updatedAt = Date()
         chapter.book = book
         
+        // 更新书籍的更新时间
+        book.updatedAt = Date()
+        
         saveContext()
     }
     
@@ -69,12 +81,22 @@ class BookViewModel: ObservableObject {
         chapter.content = content
         chapter.updatedAt = Date()
         
+        // 同时更新关联书籍的更新时间
+        if let book = chapter.book {
+            book.updatedAt = Date()
+        }
+        
         saveContext()
     }
     
     func updateChapterTitle(_ chapter: ChapterEntity, title: String) {
         chapter.title = title
         chapter.updatedAt = Date()
+        
+        // 同时更新关联书籍的更新时间
+        if let book = chapter.book {
+            book.updatedAt = Date()
+        }
         
         saveContext()
     }
