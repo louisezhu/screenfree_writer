@@ -422,6 +422,7 @@ struct ChapterEditView: View {
     @State private var isReadingSuggestions = false
     @State private var currentSuggestionIndex = 0
     @State private var activeSuggestions: [Suggestion] = []
+    @State private var speechDelegate: SpeechSynthesizerDelegate?
     let chapter: ChapterEntity
     
     var body: some View {
@@ -489,7 +490,7 @@ struct ChapterEditView: View {
                         Button(action: toggleSpeechReading) {
                             Text("")
                         }
-                        .keyboardShortcut("V", modifiers: [.command, .shift])
+                        .keyboardShortcut(KeyEquivalent(safeCharacter(from: AppSettings.shared.voiceShortcutRead)), modifiers: [.command, .shift])
                         .frame(width: 0, height: 0)
                         .opacity(0)
                         
@@ -497,7 +498,7 @@ struct ChapterEditView: View {
                         Button(action: acceptCurrentSuggestion) {
                             Text("")
                         }
-                        .keyboardShortcut("Y", modifiers: [.command])
+                        .keyboardShortcut(KeyEquivalent(safeCharacter(from: AppSettings.shared.voiceShortcutAccept)), modifiers: [.command])
                         .frame(width: 0, height: 0)
                         .opacity(0)
                         
@@ -505,7 +506,7 @@ struct ChapterEditView: View {
                         Button(action: ignoreCurrentSuggestion) {
                             Text("")
                         }
-                        .keyboardShortcut("N", modifiers: [.command])
+                        .keyboardShortcut(KeyEquivalent(safeCharacter(from: AppSettings.shared.voiceShortcutIgnore)), modifiers: [.command])
                         .frame(width: 0, height: 0)
                         .opacity(0)
                     }
@@ -625,10 +626,12 @@ struct ChapterEditView: View {
                 }
             }
             
-            // 设置语音合成器代理以监听朗读状态
-            speechSynthesizer.delegate = SpeechSynthesizerDelegate(onFinishSpeaking: {
+            // 更安全的方式设置语音合成器代理
+            let delegate = SpeechSynthesizerDelegate(onFinishSpeaking: {
                 self.handleFinishSpeakingSuggestion()
             })
+            self.speechDelegate = delegate
+            speechSynthesizer.delegate = delegate
         }
         .onDisappear {
             undoManager?.removeAllActions()
@@ -860,69 +863,84 @@ struct ChapterEditView: View {
     
     // 开始语音朗读
     private func startSpeechReading() {
-        // 停止任何正在进行的朗读
-        speechSynthesizer.stopSpeaking(at: .immediate)
-        
-        // 获取过滤后的、未被接受的建议
-        activeSuggestions = suggestions.filter { !acceptedSuggestions.contains($0.id) }
-        
-        if activeSuggestions.isEmpty {
-            // 如果没有建议，朗读提示信息
-            speakText("没有找到需要修正的内容")
-            return
+        // 确保在主线程上执行UI和语音操作
+        DispatchQueue.main.async {
+            // 停止任何正在进行的朗读
+            self.speechSynthesizer.stopSpeaking(at: .immediate)
+            
+            // 获取过滤后的、未被接受的建议
+            self.activeSuggestions = self.suggestions.filter { !self.acceptedSuggestions.contains($0.id) }
+            
+            if self.activeSuggestions.isEmpty {
+                // 如果没有建议，朗读提示信息
+                self.speakText("没有找到需要修正的内容")
+                return
+            }
+            
+            self.isReadingSuggestions = true
+            self.currentSuggestionIndex = 0
+            
+            // 显示侧边栏以便查看建议
+            if !self.showingSidebar {
+                self.showingSidebar = true
+            }
+            
+            // 朗读第一个建议
+            self.speakCurrentSuggestion()
         }
-        
-        isReadingSuggestions = true
-        currentSuggestionIndex = 0
-        
-        // 显示侧边栏以便查看建议
-        if !showingSidebar {
-            showingSidebar = true
-        }
-        
-        // 朗读第一个建议
-        speakCurrentSuggestion()
     }
     
     // 停止语音朗读
     private func stopSpeechReading() {
-        speechSynthesizer.stopSpeaking(at: .immediate)
-        isReadingSuggestions = false
+        // 确保在主线程执行
+        DispatchQueue.main.async {
+            self.speechSynthesizer.stopSpeaking(at: .immediate)
+            self.isReadingSuggestions = false
+        }
     }
     
     // 朗读当前建议
     private func speakCurrentSuggestion() {
-        guard isReadingSuggestions, 
-              currentSuggestionIndex < activeSuggestions.count else {
-            isReadingSuggestions = false
-            return
+        // 确保在主线程执行UI相关操作
+        DispatchQueue.main.async {
+            guard self.isReadingSuggestions, 
+                  self.currentSuggestionIndex < self.activeSuggestions.count else {
+                self.isReadingSuggestions = false
+                return
+            }
+            
+            let suggestion = self.activeSuggestions[self.currentSuggestionIndex]
+            let textToSpeak = "原文：\(suggestion.original)，建议修改为：\(suggestion.suggestion)，原因：\(suggestion.reason)。按Shift+Command+Y接受，Shift+Command+N忽略。"
+            
+            self.speakText(textToSpeak)
         }
-        
-        let suggestion = activeSuggestions[currentSuggestionIndex]
-        let textToSpeak = "原文：\(suggestion.original)，建议修改为：\(suggestion.suggestion)，原因：\(suggestion.reason)。按Shift+Command+Y接受，Shift+Command+N忽略。"
-        
-        speakText(textToSpeak)
     }
     
     // 朗读完一个建议后的处理
     private func handleFinishSpeakingSuggestion() {
-        // 如果不再处于朗读状态，则不继续
-        guard isReadingSuggestions else { return }
-        
-        // 等待短暂时间，让用户有时间思考
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+        // 确保在主线程执行UI相关操作
+        DispatchQueue.main.async {
+            // 如果不再处于朗读状态，则不继续
             guard self.isReadingSuggestions else { return }
             
-            // 移动到下一个建议
-            self.currentSuggestionIndex += 1
-            
-            if self.currentSuggestionIndex < self.activeSuggestions.count {
-                // 还有更多建议，继续朗读
-                self.speakCurrentSuggestion()
-            } else {
-                // 所有建议都已朗读完毕
-                self.speakText("所有建议已朗读完毕")
-                self.isReadingSuggestions = false
+            // 等待短暂时间，让用户有时间思考
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+                guard self.isReadingSuggestions else { return }
+                
+                // 移动到下一个建议
+                self.currentSuggestionIndex += 1
+                
+                if self.currentSuggestionIndex < self.activeSuggestions.count {
+                    // 还有更多建议，继续朗读
+                    self.speakCurrentSuggestion()
+                } else {
+                    // 所有建议都已朗读完毕
+                    self.speakText("所有建议已朗读完毕")
+                    // 延迟结束朗读状态，确保最后的提示被完整播放
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.isReadingSuggestions = false
+                    }
+                }
             }
         }
     }
@@ -1040,13 +1058,31 @@ struct ChapterEditView: View {
     
     // 基本文本朗读功能
     private func speakText(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN") // 使用中文语音
-        utterance.rate = 0.5 // 语速适中
-        utterance.pitchMultiplier = 1.0
-        utterance.volume = 1.0
-        
-        speechSynthesizer.speak(utterance)
+        DispatchQueue.main.async {
+            // 创建一个稳定的引用
+            let synthesizer = self.speechSynthesizer
+            let utterance = AVSpeechUtterance(string: text)
+            utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN") // 使用中文语音
+            utterance.rate = 0.5 // 语速适中
+            utterance.pitchMultiplier = 1.0
+            utterance.volume = 1.0
+            
+            // 确保delegate仍然有效
+            if synthesizer.delegate == nil && self.speechDelegate != nil {
+                synthesizer.delegate = self.speechDelegate
+            }
+            
+            synthesizer.speak(utterance)
+        }
+    }
+    
+    // 辅助函数：安全地从字符串转换为字符
+    private func safeCharacter(from string: String) -> Character {
+        // 更安全的实现方式
+        guard let firstChar = string.lowercased().first else {
+            return "v" // 默认值
+        }
+        return firstChar
     }
 }
 
@@ -1271,7 +1307,7 @@ struct SidebarView: View {
                     
                     HStack(spacing: 12) {
                         HStack(spacing: 4) {
-                            Text("⇧⌘Y")
+                            Text("⌘\(AppSettings.shared.voiceShortcutAccept)")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .padding(.horizontal, 4)
@@ -1284,7 +1320,7 @@ struct SidebarView: View {
                         }
                         
                         HStack(spacing: 4) {
-                            Text("⇧⌘N")
+                            Text("⌘\(AppSettings.shared.voiceShortcutIgnore)")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .padding(.horizontal, 4)
@@ -1297,7 +1333,7 @@ struct SidebarView: View {
                         }
                         
                         HStack(spacing: 4) {
-                            Text("⇧⌘V")
+                            Text("⇧⌘\(AppSettings.shared.voiceShortcutRead)")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .padding(.horizontal, 4)

@@ -117,11 +117,7 @@ struct ProfileView: View {
                             Divider()
                                 .padding(.leading, 56)
                     
-                    NavigationLink(destination: Text("快捷键设置")) {
-                                SettingRow(title: "快捷键设置", icon: "keyboard", showDivider: true)
-                    }
-                    
-                    NavigationLink(destination: Text("语音设置")) {
+                    NavigationLink(destination: VoiceSettingsView()) {
                                 SettingRow(title: "语音设置", icon: "waveform", showDivider: false)
                             }
                         }
