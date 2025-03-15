@@ -423,6 +423,7 @@ struct ChapterEditView: View {
     @State private var currentSuggestionIndex = 0
     @State private var activeSuggestions: [Suggestion] = []
     @State private var speechDelegate: SpeechSynthesizerDelegate?
+    @State private var isSpeechPaused = false // 添加状态变量跟踪暂停状态
     let chapter: ChapterEntity
     
     var body: some View {
@@ -857,7 +858,21 @@ struct ChapterEditView: View {
         if isReadingSuggestions {
             stopSpeechReading()
         } else {
-            startSpeechReading()
+            // 检查是否是暂停后的恢复
+            if isSpeechPaused {
+                resumeSpeechReading()
+            } else {
+                startSpeechReading()
+            }
+        }
+    }
+    
+    // 恢复已暂停的朗读
+    private func resumeSpeechReading() {
+        DispatchQueue.main.async {
+            self.isReadingSuggestions = true
+            self.isSpeechPaused = false
+            self.speechSynthesizer.continueSpeaking()
         }
     }
     
@@ -894,8 +909,10 @@ struct ChapterEditView: View {
     private func stopSpeechReading() {
         // 确保在主线程执行
         DispatchQueue.main.async {
-            self.speechSynthesizer.stopSpeaking(at: .immediate)
+            // 改为使用pauseSpeaking而不是stopSpeaking，这样可以暂停而不是完全停止
+            self.speechSynthesizer.pauseSpeaking(at: .immediate)
             self.isReadingSuggestions = false
+            self.isSpeechPaused = true
         }
     }
     
@@ -923,6 +940,9 @@ struct ChapterEditView: View {
             // 如果不再处于朗读状态，则不继续
             guard self.isReadingSuggestions else { return }
             
+            // 重置暂停状态
+            self.isSpeechPaused = false
+            
             // 等待短暂时间，让用户有时间思考
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
                 guard self.isReadingSuggestions else { return }
@@ -939,6 +959,7 @@ struct ChapterEditView: View {
                     // 延迟结束朗读状态，确保最后的提示被完整播放
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         self.isReadingSuggestions = false
+                        self.isSpeechPaused = false
                     }
                 }
             }
@@ -954,6 +975,8 @@ struct ChapterEditView: View {
         
         // 停止当前朗读
         speechSynthesizer.stopSpeaking(at: .immediate)
+        // 重置暂停状态
+        isSpeechPaused = false
         
         // 执行替换操作
         applySuggestion(suggestion)
@@ -979,6 +1002,7 @@ struct ChapterEditView: View {
             if self.activeSuggestions.isEmpty {
                 self.speakText("所有建议已处理完毕")
                 self.isReadingSuggestions = false
+                self.isSpeechPaused = false
             } else {
                 self.speakCurrentSuggestion()
             }
@@ -994,6 +1018,8 @@ struct ChapterEditView: View {
         
         // 停止当前朗读
         speechSynthesizer.stopSpeaking(at: .immediate)
+        // 重置暂停状态
+        isSpeechPaused = false
         
         // 标记为已忽略
         acceptedSuggestions.insert(suggestion.id)
@@ -1016,6 +1042,7 @@ struct ChapterEditView: View {
             if self.activeSuggestions.isEmpty {
                 self.speakText("所有建议已处理完毕")
                 self.isReadingSuggestions = false
+                self.isSpeechPaused = false
             } else {
                 self.speakCurrentSuggestion()
             }
@@ -1061,6 +1088,18 @@ struct ChapterEditView: View {
         DispatchQueue.main.async {
             // 创建一个稳定的引用
             let synthesizer = self.speechSynthesizer
+            
+            // 检查synthesizer的当前状态
+            let isSpeaking = synthesizer.isSpeaking
+            
+            // 如果正在朗读，先暂停
+            if isSpeaking {
+                synthesizer.pauseSpeaking(at: .immediate)
+            }
+            
+            // 重置暂停状态
+            self.isSpeechPaused = false
+            
             let utterance = AVSpeechUtterance(string: text)
             utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN") // 使用中文语音
             utterance.rate = 0.5 // 语速适中
@@ -1096,7 +1135,19 @@ class SpeechSynthesizerDelegate: NSObject, AVSpeechSynthesizerDelegate {
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        // 仅当正常结束时才调用回调
         onFinishSpeaking()
+    }
+    
+    // 添加暂停和继续的委托方法
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+        // 处理暂停事件
+        print("Speech paused")
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        // 处理继续事件
+        print("Speech continued")
     }
 }
 
