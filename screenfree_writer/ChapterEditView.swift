@@ -540,7 +540,8 @@ struct ChapterEditView: View {
                     acceptedSuggestions: $acceptedSuggestions,
                     content: $content,
                     checkedParagraphs: $checkedParagraphs,
-                    currentTextIsPerfect: currentTextIsPerfect
+                    currentTextIsPerfect: currentTextIsPerfect,
+                    chapter: chapter
                 )
                 .frame(width: 300)
                 .background(AppTheme.cardBackground)
@@ -564,6 +565,11 @@ struct ChapterEditView: View {
             
             // 设置光标位置到文本末尾
             selectedRange = NSRange(location: content.count, length: 0)
+            
+            // 从UserDefaults加载已检查的段落
+            if let chapterId = chapter.id {
+                checkedParagraphs = CheckedParagraphsManager.shared.fetchAllCheckedParagraphs(chapterId: chapterId)
+            }
             
             Task {
                 await checkText()
@@ -668,6 +674,11 @@ struct ChapterEditView: View {
             if Task.isCancelled {
                 isChecking = false
                 return
+            }
+            
+            // 将已检查的段落保存到UserDefaults
+            if let chapterId = chapter.id {
+                CheckedParagraphsManager.shared.saveCheckedParagraph(paragraphText: segmentToCheck, chapterId: chapterId)
             }
             
             // 如果没有建议，可能文本是完美的
@@ -944,6 +955,7 @@ struct SidebarView: View {
     @Binding var content: String
     @Binding var checkedParagraphs: Set<String>
     let currentTextIsPerfect: Bool
+    let chapter: ChapterEntity
     
     var body: some View {
         VStack(spacing: 0) {
@@ -956,6 +968,10 @@ struct SidebarView: View {
                 
                 // 添加重置检查记录的按钮
                 Button(action: {
+                    // 从UserDefaults中清除已检查的段落
+                    if let chapterId = chapter.id {
+                        CheckedParagraphsManager.shared.clearCheckedParagraphs(chapterId: chapterId)
+                    }
                     checkedParagraphs.removeAll()
                 }) {
                     Image(systemName: "arrow.clockwise")

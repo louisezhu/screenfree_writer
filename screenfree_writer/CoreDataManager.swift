@@ -88,4 +88,63 @@ class CoreDataManager {
         context.delete(chapter)
         saveContext()
     }
+    
+    // MARK: - Checked Paragraph Operations
+    
+    func saveCheckedParagraph(paragraphText: String, chapterId: UUID) {
+        // 检查是否已存在该段落记录
+        let existingParagraph = fetchCheckedParagraph(paragraphText: paragraphText, chapterId: chapterId)
+        if existingParagraph == nil {
+            // 创建新记录
+            let checkedParagraph = CheckedParagraphEntity(context: context)
+            checkedParagraph.id = UUID()
+            checkedParagraph.paragraphText = paragraphText
+            checkedParagraph.chapterId = chapterId
+            checkedParagraph.checkedDate = Date()
+            saveContext()
+        }
+    }
+    
+    func fetchCheckedParagraph(paragraphText: String, chapterId: UUID) -> CheckedParagraphEntity? {
+        let request: NSFetchRequest<CheckedParagraphEntity> = CheckedParagraphEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "paragraphText == %@ AND chapterId == %@", paragraphText, chapterId as CVarArg)
+        request.fetchLimit = 1
+        
+        do {
+            let results = try context.fetch(request)
+            return results.first
+        } catch {
+            print("获取已检查段落失败: \(error)")
+            return nil
+        }
+    }
+    
+    func fetchAllCheckedParagraphs(chapterId: UUID) -> Set<String> {
+        let request: NSFetchRequest<CheckedParagraphEntity> = CheckedParagraphEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "chapterId == %@", chapterId as CVarArg)
+        
+        do {
+            let results = try context.fetch(request)
+            let paragraphTexts = results.compactMap { $0.paragraphText }
+            return Set(paragraphTexts)
+        } catch {
+            print("获取所有已检查段落失败: \(error)")
+            return []
+        }
+    }
+    
+    func clearCheckedParagraphs(chapterId: UUID) {
+        let request: NSFetchRequest<CheckedParagraphEntity> = CheckedParagraphEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "chapterId == %@", chapterId as CVarArg)
+        
+        do {
+            let results = try context.fetch(request)
+            for paragraph in results {
+                context.delete(paragraph)
+            }
+            saveContext()
+        } catch {
+            print("清除已检查段落失败: \(error)")
+        }
+    }
 } 

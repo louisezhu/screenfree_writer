@@ -10,6 +10,10 @@ import SwiftUI
 @main
 struct screenfree_writerApp: App {
     let persistenceController = PersistenceController.shared
+    
+    init() {
+        // 初始化应用
+    }
 
     var body: some Scene {
         WindowGroup {
