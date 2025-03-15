@@ -95,44 +95,142 @@ class DoubaoCorrectService {
     }
     
     private static func extractSuggestionsFromContent(_ content: String) throws -> [Suggestion] {
-        // 从文本中识别和提取JSON
-        guard let jsonData = findJSONInString(content) else {
-            throw NSError(domain: "com.screenfree.writer", code: 1002, 
-                         userInfo: [NSLocalizedDescriptionKey: "无法从响应中提取JSON数据"])
-        }
+        print("开始从API响应内容中提取建议...")
+        print("输入内容长度: \(content.count)字符")
         
-        // 解析提取的JSON
-        let decoder = JSONDecoder()
-        let doubaoResponse = try decoder.decode(DoubaoResponse.self, from: jsonData)
-        
-        // 如果状态为"perfect"或没有建议，返回空数组
-        if doubaoResponse.status == "perfect" || doubaoResponse.suggestions == nil || doubaoResponse.suggestions!.isEmpty {
-            return []
-        }
-        
-        // 返回建议数组
-        return doubaoResponse.suggestions ?? []
-    }
-    
-    private static func findJSONInString(_ text: String) -> Data? {
-        let pattern = "\\{[^{]*?\"status\"\\s*:\\s*\"[^\"]*\"[^}]*\\}"
-        
+        // 1. 首先尝试直接将content作为JSON字符串解析
         do {
-            let regex = try NSRegularExpression(pattern: pattern, options: [])
-            let nsString = text as NSString
-            let range = NSRange(location: 0, length: nsString.length)
-            
-            if let match = regex.firstMatch(in: text, options: [], range: range) {
-                let matchedString = nsString.substring(with: match.range)
-                
-                // 将字符串转换为数据
-                return matchedString.data(using: .utf8)
+            if let data = content.data(using: .utf8) {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(DoubaoResponse.self, from: data)
+                print("✅ 直接解析内容成功!")
+                return response.suggestions ?? []
             }
         } catch {
-            print("正则表达式错误: \(error)")
+            print("❌ 直接解析失败: \(error)")
         }
         
-        return nil
+        // 2. 尝试提取嵌套的JSON字符串
+        // 查找格式为 {"status": "has_suggestions", ... } 的字符串
+        let pattern = "\\{\\s*\"status\"[^}]*\\}\\s*"
+        do {
+            let regex = try NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators])
+            let nsString = content as NSString
+            let range = NSRange(location: 0, length: nsString.length)
+            
+            if let match = regex.firstMatch(in: content, options: [], range: range) {
+                let matchString = nsString.substring(with: match.range)
+                print("✅ 找到匹配的JSON字符串: \(matchString.prefix(50))...")
+                
+                // 尝试解析匹配的字符串
+                if let jsonData = matchString.data(using: .utf8) {
+                    let decoder = JSONDecoder()
+                    let response = try decoder.decode(DoubaoResponse.self, from: jsonData)
+                    print("✅ 解析匹配的JSON成功!")
+                    return response.suggestions ?? []
+                }
+            } else {
+                print("❌ 没有找到匹配的JSON格式")
+            }
+        } catch {
+            print("❌ 正则匹配或解析失败: \(error)")
+        }
+        
+        // 3. 尝试更简单直接的方式提取具体字段
+        if let jsonStart = content.range(of: "{\"status\":"),
+           let jsonEnd = findMatchingBrace(in: content, startFrom: jsonStart.lowerBound) {
+            let jsonString = String(content[jsonStart.lowerBound...jsonEnd])
+            print("✅ 提取到可能的JSON: \(jsonString.prefix(50))...")
+            
+            do {
+                if let jsonData = jsonString.data(using: .utf8) {
+                    let decoder = JSONDecoder()
+                    let response = try decoder.decode(DoubaoResponse.self, from: jsonData)
+                    print("✅ 解析提取的JSON成功!")
+                    return response.suggestions ?? []
+                }
+            } catch {
+                print("❌ 解析提取的JSON失败: \(error)")
+            }
+        }
+        
+        // 4. 最后使用正则表达式直接提取各个字段值
+        print("尝试使用正则表达式直接提取字段...")
+        do {
+            let originalPattern = "\"original\"\\s*:\\s*\"([^\"]*)\"" 
+            let suggestionPattern = "\"suggestion\"\\s*:\\s*\"([^\"]*)\"" 
+            let reasonPattern = "\"reason\"\\s*:\\s*\"([^\"]*)\"" 
+            
+            let originalRegex = try NSRegularExpression(pattern: originalPattern, options: [])
+            let suggestionRegex = try NSRegularExpression(pattern: suggestionPattern, options: [])
+            let reasonRegex = try NSRegularExpression(pattern: reasonPattern, options: [])
+            
+            let range = NSRange(location: 0, length: content.count)
+            
+            var suggestions: [Suggestion] = []
+            
+            // 查找所有匹配项
+            let originalMatches = originalRegex.matches(in: content, options: [], range: range)
+            let suggestionMatches = suggestionRegex.matches(in: content, options: [], range: range)
+            let reasonMatches = reasonRegex.matches(in: content, options: [], range: range)
+            
+            // 确保找到的匹配数量一致
+            let minMatchCount = min(originalMatches.count, suggestionMatches.count, reasonMatches.count)
+            
+            for i in 0..<minMatchCount {
+                if let originalRange = Range(originalMatches[i].range(at: 1), in: content),
+                   let suggestionRange = Range(suggestionMatches[i].range(at: 1), in: content),
+                   let reasonRange = Range(reasonMatches[i].range(at: 1), in: content) {
+                    
+                    let original = String(content[originalRange])
+                    let suggestion = String(content[suggestionRange])
+                    let reason = String(content[reasonRange])
+                    
+                    suggestions.append(Suggestion(
+                        original: original,
+                        suggestion: suggestion,
+                        reason: reason
+                    ))
+                    
+                    print("✅ 成功提取第\(i+1)个建议: \(original) -> \(suggestion)")
+                }
+            }
+            
+            if !suggestions.isEmpty {
+                return suggestions
+            }
+        } catch {
+            print("❌ 直接提取字段失败: \(error)")
+        }
+        return []
+    }
+    
+    // 辅助方法：查找与提供位置的左大括号匹配的右大括号
+    private static func findMatchingBrace(in text: String, startFrom position: String.Index) -> String.Index? {
+        guard position < text.endIndex, text[position] == "{" else {
+            return nil
+        }
+        
+        var stack = 1 // 已经找到一个左大括号
+        var currentPos = text.index(after: position)
+        
+        while currentPos < text.endIndex && stack > 0 {
+            let char = text[currentPos]
+            if char == "{" {
+                stack += 1
+            } else if char == "}" {
+                stack -= 1
+            }
+            
+            // 如果找到匹配的右大括号，返回位置
+            if stack == 0 {
+                return currentPos
+            }
+            
+            currentPos = text.index(after: currentPos)
+        }
+        
+        return nil // 没有找到匹配的右大括号
     }
 }
 
@@ -156,7 +254,7 @@ struct DoubaoResponse: Codable {
     
     var hasSuggestions: Bool {
         return status == "has_suggestions" && suggestions != nil && !suggestions!.isEmpty
-}
+    }
 }
 
 struct Suggestion: Codable, Identifiable, Equatable {
@@ -241,5 +339,16 @@ class KeychainManager {
         }
         
         return nil
+    }
+}
+
+// 扩展Data用于JSON格式化输出
+extension Data {
+    var prettyPrintedJSONString: String? {
+        guard let object = try? JSONSerialization.jsonObject(with: self, options: []),
+              let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]),
+              let prettyPrintedString = String(data: data, encoding: .utf8) else { return nil }
+
+        return prettyPrintedString
     }
 } 

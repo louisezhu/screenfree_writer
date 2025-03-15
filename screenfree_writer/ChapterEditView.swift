@@ -611,63 +611,23 @@ struct ChapterEditView: View {
             return
         }
         
-        // 获取当前光标位置之前的内容
-        let currentIndex = selectedRange.location
-        let textBeforeCursor = currentIndex > 0 ? String(content.prefix(currentIndex)) : ""
-        
-        // 查找最后一个标点符号的位置
-        let punctuations = "，。！？,.!?"
-        var lastSegmentStart = 0
-        var lastPunctuationIndex = -1
-        
-        // 从光标位置向前查找最近的两个标点符号
-        for (index, char) in textBeforeCursor.enumerated().reversed() {
-            if punctuations.contains(char) {
-                if lastPunctuationIndex == -1 {
-                    // 找到第一个标点符号（最近的）
-                    lastPunctuationIndex = index
-                } else {
-                    // 找到第二个标点符号
-                    lastSegmentStart = index + 1
-                    break
-                }
-            }
-        }
-        
-        // 如果没有找到两个标点符号，使用内容开头作为段落起始
-        if lastPunctuationIndex == -1 {
-            // 没有找到任何标点符号，检查全部内容
-            lastSegmentStart = 0
-            lastPunctuationIndex = textBeforeCursor.count - 1
-        } else if lastSegmentStart == 0 && lastPunctuationIndex != -1 {
-            // 只找到一个标点符号，从开头到该标点符号
-            lastSegmentStart = 0
-        }
-        
-        // 提取要检查的段落
-        let startIndex = textBeforeCursor.index(textBeforeCursor.startIndex, offsetBy: lastSegmentStart)
-        let endIndex = textBeforeCursor.index(textBeforeCursor.startIndex, offsetBy: min(lastPunctuationIndex + 1, textBeforeCursor.count))
-        var segmentToCheck = String(textBeforeCursor[startIndex..<endIndex])
-        
-        // 记录段落在整个文本中的起始位置，用于后续定位替换
-        let segmentStartPosition = lastSegmentStart
+        // 根据光标位置获取上一个非空自然段
+        let cursorPosition = selectedRange.location
+        let checktext = findPreviousNonEmptyParagraph(text: content, cursorPosition: cursorPosition)
+        var segmentToCheck = checktext
+        var segmentStartPosition = content.distance(from: content.startIndex, to: (content.range(of: checktext)?.lowerBound ?? content.startIndex))
         
         // 移除段落末尾的标点符号和空白
         if !segmentToCheck.isEmpty {
-            // 移除尾部的标点符号
-            while !segmentToCheck.isEmpty && punctuations.contains(segmentToCheck.last!) {
-                segmentToCheck.removeLast()
-            }
-            
-            // 移除尾部的空白
+            // 移除开头和尾部的空白
             segmentToCheck = segmentToCheck.trimmingCharacters(in: .whitespacesAndNewlines)
             
-            // 移除开头的标点符号（如果有的话）
-            while !segmentToCheck.isEmpty && punctuations.contains(segmentToCheck.first!) {
-                segmentToCheck.removeFirst()
+            // 如果段落为空，则跳过
+            if segmentToCheck.isEmpty {
+                return
             }
         }
-        
+    
         // 如果这个段落已经检查过，内容没有变化，或者太短，则跳过
         if checkedParagraphs.contains(segmentToCheck) || segmentToCheck.isEmpty || segmentToCheck.count < 2 {
             if checkedParagraphs.contains(segmentToCheck) {
@@ -793,6 +753,49 @@ struct ChapterEditView: View {
         } else if currentMatchIndex >= matches.count {
             currentMatchIndex = matches.count - 1
         }
+    }
+    
+    // 辅助函数：根据光标位置找到上一个非空自然段的文本
+    private func findPreviousNonEmptyParagraph(text: String, cursorPosition: Int) -> String {
+        // 将文本按换行符分隔成段落
+        let paragraphs = text.components(separatedBy: .newlines)
+        
+        // 如果文本为空或光标位置不合法，返回空字符串
+        guard !text.isEmpty, cursorPosition >= 0, cursorPosition <= text.count else {
+            return ""
+        }
+        
+        // 计算光标位置前的文本
+        let textBeforeCursor = String(text.prefix(cursorPosition))
+        
+        // 计算光标所在的段落索引
+        var characterCount = 0
+        var currentParagraphIndex = -1
+        
+        for (index, paragraph) in paragraphs.enumerated() {
+            let paragraphLength = paragraph.count + 1 // +1 是为了包含换行符
+            characterCount += paragraphLength
+            
+            if characterCount >= cursorPosition {
+                currentParagraphIndex = index
+                break
+            }
+        }
+        
+        // 如果没有找到当前段落，使用最后一个段落
+        if currentParagraphIndex == -1 {
+            currentParagraphIndex = paragraphs.count - 1
+        }
+        
+        // 从当前段落向前查找非空段落
+        for index in stride(from: currentParagraphIndex, through: 0, by: -1) {
+            let paragraph = paragraphs[index].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !paragraph.isEmpty {
+                return paragraphs[index]
+            }
+        }
+        
+        return "" // 如果没有找到非空段落，返回空字符串
     }
 }
 
