@@ -10,6 +10,7 @@ struct BookDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var showingRenameSheet = false
     @State private var newChapterTitle: String = ""
+    @State private var refreshID = UUID()
     @Environment(\.dismiss) private var dismiss
     let book: BookEntity
     
@@ -116,7 +117,7 @@ struct BookDetailView: View {
                         .padding(.top, 16)
             
             // 章节列表
-                    if let chapters = book.chapters?.allObjects as? [ChapterEntity], !chapters.isEmpty {
+                    if let chapters = getSortedChapters(), !chapters.isEmpty {
                         ScrollView {
                             LazyVStack(spacing: 12) {
                                 ForEach(chapters) { chapter in
@@ -135,6 +136,7 @@ struct BookDetailView: View {
                             }
                             Button(role: .destructive, action: {
                                 viewModel.deleteChapter(chapter)
+                                refreshID = UUID()
                             }) {
                                 Label("删除", systemImage: "trash")
                             }
@@ -142,6 +144,7 @@ struct BookDetailView: View {
                 }
                             }
                             .padding(.bottom, 100) // 留出底部空间给FAB
+                            .id(refreshID)
                         }
                     } else {
                         // 空状态
@@ -161,6 +164,7 @@ struct BookDetailView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
+                        .id(refreshID)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -218,13 +222,17 @@ struct BookDetailView: View {
             .padding(20),
             alignment: .bottomTrailing
         )
-        .sheet(isPresented: $showingNewChapterSheet) {
+        .sheet(isPresented: $showingNewChapterSheet, onDismiss: {
+            refreshID = UUID()
+        }) {
             NewChapterView(book: book, viewModel: viewModel)
         }
         .sheet(isPresented: $showingEditBookSheet) {
             EditBookView(book: book, bookTitle: $editingBookTitle, viewModel: viewModel)
         }
-        .sheet(isPresented: $showingRenameSheet) {
+        .sheet(isPresented: $showingRenameSheet, onDismiss: {
+            refreshID = UUID()
+        }) {
             RenameChapterView(chapter: selectedChapter, chapterTitle: $newChapterTitle, viewModel: viewModel)
         }
         .alert("确定删除此书籍？", isPresented: $showingDeleteAlert) {
@@ -236,6 +244,15 @@ struct BookDetailView: View {
         } message: {
             Text("此操作不可撤销，书籍中的所有章节将被永久删除。")
         }
+    }
+    
+    private func getSortedChapters() -> [ChapterEntity]? {
+        if let chapters = book.chapters?.allObjects as? [ChapterEntity] {
+            return chapters.sorted { 
+                ($0.createdAt ?? Date.distantPast) < ($1.createdAt ?? Date.distantPast) 
+            }
+        }
+        return nil
     }
     
     private var totalWordCount: Int {
@@ -253,6 +270,20 @@ struct BookDetailView: View {
         
         // 返回清理后的文本长度
         return cleanText?.count ?? 0
+    }
+    
+    // 格式化日期
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+    
+    // 格式化短日期
+    private func formattedShortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter.string(from: date)
     }
 }
 

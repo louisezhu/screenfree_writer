@@ -90,10 +90,6 @@ struct ProfileView: View {
                         }
                         
                         VStack(spacing: 0) {
-                            NavigationLink(destination: Text("iCloud设置")) {
-                                SettingRow(title: "iCloud同步", icon: "icloud", showDivider: true)
-                            }
-                            
                             HStack {
                                 Image(systemName: "pencil.and.outline")
                                     .foregroundColor(AppTheme.primary)

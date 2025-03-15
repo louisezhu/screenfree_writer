@@ -42,6 +42,26 @@ class AppSettings {
         }
     }
     
+    // API密钥管理
+    func getAPIKey() -> String? {
+        return KeychainManager.shared.getAPIKey()
+    }
+    
+    func setAPIKey(_ key: String) {
+        KeychainManager.shared.storeAPIKey(key)
+    }
+    
+    // 更安全的获取API密钥的方法，用于开发/生产环境
+    func getSecureAPIKey() -> String? {
+        #if DEBUG
+        // 开发环境使用Info.plist中的密钥
+        return Bundle.main.infoDictionary?["API_KEY"] as? String
+        #else
+        // 生产环境使用Keychain中的密钥
+        return KeychainManager.shared.retrieveAPIKey()
+        #endif
+    }
+    
     private init() {
         // 确保默认设置
         if defaults.object(forKey: Keys.enableTextCorrection) == nil {
@@ -50,6 +70,18 @@ class AppSettings {
         
         if defaults.object(forKey: Keys.textCorrectionService) == nil {
             textCorrectionService = .doubao
+        }
+        
+        // 第一次运行时，尝试从Info.plist导入API密钥到Keychain
+        migrateAPIKeyToKeychain()
+    }
+    
+    // 将API密钥从Info.plist迁移到Keychain
+    private func migrateAPIKeyToKeychain() {
+        if KeychainManager.shared.retrieveAPIKey() == nil,
+           let apiKeyFromPlist = Bundle.main.infoDictionary?["API_KEY"] as? String,
+           !apiKeyFromPlist.isEmpty {
+            KeychainManager.shared.storeAPIKey(apiKeyFromPlist)
         }
     }
 }

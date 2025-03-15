@@ -51,19 +51,6 @@ struct WritingView: View {
             .sheet(isPresented: $showingNewBookSheet) {
                 NewBookView(viewModel: viewModel)
             }
-            .alert("iCloud 同步错误", isPresented: $viewModel.showICloudAlert) {
-                Button("确定") {
-                    viewModel.showICloudAlert = false
-                }
-                
-                Button("打开设置") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-            } message: {
-                Text(viewModel.iCloudErrorMessage ?? "无法连接到 iCloud。请检查您的 iCloud 账户设置。")
-            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -72,8 +59,6 @@ struct WritingView: View {
 struct BookCard: View {
     let book: BookEntity
     @StateObject private var viewModel = BookViewModel()
-    @State private var isSyncing = false
-    @State private var lastSyncTime: Date? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -150,15 +135,6 @@ struct BookCard: View {
                     }
                     .foregroundColor(AppTheme.secondaryText)
                 }
-                
-                // 云同步信息
-                HStack(spacing: 4) {
-                    Image(systemName: lastSyncTime != nil ? "checkmark.icloud" : "icloud")
-                        .font(.caption2)
-                    Text(lastSyncTime != nil ? "同步于\(formattedShortDate(lastSyncTime!))" : "未同步")
-                        .font(.caption2)
-                }
-                .foregroundColor(lastSyncTime != nil ? AppTheme.accent : AppTheme.secondaryText)
             }
         }
         .padding()
@@ -170,43 +146,10 @@ struct BookCard: View {
                 .stroke(AppTheme.secondary.opacity(0.2), lineWidth: 1)
         )
         .contextMenu {
-            Button(action: {
-                if viewModel.iCloudStatus != .available {
-                    viewModel.iCloudErrorMessage = "您需要登录 iCloud 账户才能同步。请在设置中登录 iCloud 账户。"
-                    viewModel.showICloudAlert = true
-                    return
-                }
-                
-                isSyncing = true
-                Task {
-                    do {
-                        try await viewModel.syncBookToCloud(book)
-                        // 同步成功后更新显示的同步时间
-                        lastSyncTime = Date()
-                    } catch {
-                        print("Error syncing book to cloud: \(error)")
-                    }
-                    isSyncing = false
-                }
-            }) {
-                if isSyncing {
-                    ProgressView()
-                } else {
-                    Label("同步到云端", systemImage: "arrow.triangle.2.circlepath")
-                }
-            }
-            .disabled(isSyncing || viewModel.iCloudStatus != .available)
-            
             Button(role: .destructive, action: {
                 viewModel.deleteBook(book)
             }) {
                 Label("删除书籍", systemImage: "trash")
-            }
-        }
-        .onAppear {
-            // 加载上次同步时间
-            if let bookId = book.id {
-                lastSyncTime = SyncStatusManager.shared.getLastSyncTime(for: bookId)
             }
         }
     }

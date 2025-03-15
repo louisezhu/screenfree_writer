@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B7589CD22D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */; };
+		B7589CD32D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7589CCF2D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld */; };
+		B7589CD42D8588F900B99122 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7589CCE2D8588F900B99122 /* screenfree_writer.xcdatamodeld */; };
 		B75C64352D83300000BB5561 /* BookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75C64202D832FFF00BB5561 /* BookDetailView.swift */; };
 		B75C64362D83300000BB5561 /* CoreDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75C64212D832FFF00BB5561 /* CoreDataManager.swift */; };
 		B75C64372D83300000BB5561 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75C64222D832FFF00BB5561 /* Persistence.swift */; };
@@ -24,7 +27,6 @@
 		B75C64462D83300000BB5561 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B75C64332D83300000BB5561 /* screenfree_writer.xcdatamodeld */; };
 		B77D89AE2D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89A72D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld */; };
 		B77D89AF2D833C4F005D2209 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89A92D833C4F005D2209 /* screenfree_writer.xcdatamodeld */; };
-		B77D89B02D833C4F005D2209 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89AB2D833C4F005D2209 /* CloudKitService.swift */; };
 		B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AC2D833C4F005D2209 /* Assets.xcassets */; };
 		B77D89B22D833C4F005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89AD2D833C4F005D2209 /* Preview Content */; };
 		B77D89BB2D834658005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89B42D834658005D2209 /* Preview Content */; };
@@ -34,7 +36,6 @@
 		B77D89C62D834CE0005D2209 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */; };
 		B77D89C72D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */; };
 		B77D89C82D834CE0005D2209 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B77D89C32D834CE0005D2209 /* Assets.xcassets */; };
-		B77D89C92D834CE0005D2209 /* SyncStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */; };
 		B77D89CA2D834CE0005D2209 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B77D89C52D834CE0005D2209 /* Preview Content */; };
 		B78E981A2D84720900D319F8 /* AutoCorrectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78E98182D84720800D319F8 /* AutoCorrectService.swift */; };
 		B78E981B2D84720900D319F8 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78E98192D84720800D319F8 /* AppSettings.swift */; };
@@ -47,7 +48,6 @@
 		B7A378492D8479020090C586 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7A378432D8479020090C586 /* screenfree_writer.xcdatamodeld */; };
 		B7A3784A2D8479020090C586 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B7A378452D8479020090C586 /* Preview Content */; };
 		B7A3784B2D8479020090C586 /* DeepseekCoreMLService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */; };
-		B7A3784D2D8482EB0090C586 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = B7A3784C2D8482EB0090C586 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +68,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc"; sourceTree = "<group>"; };
+		B7589CD02D8588F900B99122 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
+		B7589CD12D8588F900B99122 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
 		B75C64202D832FFF00BB5561 /* BookDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookDetailView.swift; sourceTree = "<group>"; };
 		B75C64212D832FFF00BB5561 /* CoreDataManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataManager.swift; sourceTree = "<group>"; };
 		B75C64222D832FFF00BB5561 /* Persistence.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -87,7 +90,6 @@
 		B75C64342D83300000BB5561 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B77D89A82D833C4F005D2209 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
 		B77D89AA2D833C4F005D2209 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
-		B77D89AB2D833C4F005D2209 /* CloudKitService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
 		B77D89AC2D833C4F005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B77D89AD2D833C4F005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		B77D89B42D834658005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
@@ -97,7 +99,6 @@
 		B77D89C02D834CDF005D2209 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B77D89C22D834CE0005D2209 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
 		B77D89C32D834CE0005D2209 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncStatusManager.swift; sourceTree = "<group>"; };
 		B77D89C52D834CE0005D2209 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		B78E97FF2D84695700D319F8 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B78E98002D84695700D319F8 /* screenfree_writer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = screenfree_writer.xcodeproj; sourceTree = "<group>"; };
@@ -112,7 +113,6 @@
 		B7A378442D8479020090C586 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B7A378452D8479020090C586 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepseekCoreMLService.swift; sourceTree = "<group>"; };
-		B7A3784C2D8482EB0090C586 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc"; sourceTree = "<group>"; };
 		B7D465822D832B140042B162 /* screenfree_writer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = screenfree_writer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465992D832B170042B162 /* screenfree_writerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465A32D832B170042B162 /* screenfree_writerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -172,9 +172,7 @@
 				B75C642B2D83300000BB5561 /* Assets.xcassets */,
 				B75C64202D832FFF00BB5561 /* BookDetailView.swift */,
 				B77D89AC2D833C4F005D2209 /* Assets.xcassets */,
-				B77D89AB2D833C4F005D2209 /* CloudKitService.swift */,
 				B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */,
-				B7A3784C2D8482EB0090C586 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */,
 				B77D89AD2D833C4F005D2209 /* Preview Content */,
 				B77D89C32D834CE0005D2209 /* Assets.xcassets */,
 				B77D89C52D834CE0005D2209 /* Preview Content */,
@@ -191,12 +189,14 @@
 				B77D89B52D834658005D2209 /* Assets.xcassets */,
 				B77D89BF2D834CDF005D2209 /* screenfree_writer.xcdatamodeld */,
 				B77D89C12D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld */,
-				B77D89C42D834CE0005D2209 /* SyncStatusManager.swift */,
 				B77D89B42D834658005D2209 /* Preview Content */,
 				B77D89B62D834658005D2209 /* screenfree_writer.xcdatamodeld */,
 				B77D89B82D834658005D2209 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C642A2D83300000BB5561 /* BookViewModel.swift */,
 				B75C64302D83300000BB5561 /* ChapterEditView.swift */,
+				B7589CCD2D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc */,
+				B7589CCE2D8588F900B99122 /* screenfree_writer.xcdatamodeld */,
+				B7589CCF2D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld */,
 				B75C64232D832FFF00BB5561 /* ContentView.swift */,
 				B75C64212D832FFF00BB5561 /* CoreDataManager.swift */,
 				B75C642E2D83300000BB5561 /* Info.plist */,
@@ -338,7 +338,7 @@
 				B77D89B12D833C4F005D2209 /* Assets.xcassets in Resources */,
 				B77D89C82D834CE0005D2209 /* Assets.xcassets in Resources */,
 				B7A378402D8472480090C586 /* Preview Content in Resources */,
-				B7A3784D2D8482EB0090C586 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */,
+				B7589CD22D8588F900B99122 /* DeepSeek-R1-Distill-Qwen-1.5B-4bit.mlmodelc in Resources */,
 				B7A3783F2D8472480090C586 /* Assets.xcassets in Resources */,
 				B77D89BC2D834658005D2209 /* Assets.xcassets in Resources */,
 			);
@@ -366,7 +366,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B7A3783E2D8472480090C586 /* ScreenFreeWriter.xcdatamodeld in Sources */,
-				B77D89B02D833C4F005D2209 /* CloudKitService.swift in Sources */,
 				B75C64432D83300000BB5561 /* ChapterEditView.swift in Sources */,
 				B77D89C72D834CE0005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B75C643A2D83300000BB5561 /* ScreenFreeWriter.xcdatamodeld in Sources */,
@@ -377,6 +376,8 @@
 				B75C64362D83300000BB5561 /* CoreDataManager.swift in Sources */,
 				B75C643C2D83300000BB5561 /* Models.swift in Sources */,
 				B75C64462D83300000BB5561 /* screenfree_writer.xcdatamodeld in Sources */,
+				B7589CD32D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld in Sources */,
+				B7589CD42D8588F900B99122 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64392D83300000BB5561 /* ProfileView.swift in Sources */,
 				B77D89BE2D834658005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B7A3783D2D8472480090C586 /* screenfree_writer.xcdatamodeld in Sources */,
@@ -384,7 +385,6 @@
 				B78E981A2D84720900D319F8 /* AutoCorrectService.swift in Sources */,
 				B75C64442D83300000BB5561 /* WritingView.swift in Sources */,
 				B75C643D2D83300000BB5561 /* BookViewModel.swift in Sources */,
-				B77D89C92D834CE0005D2209 /* SyncStatusManager.swift in Sources */,
 				B7A378492D8479020090C586 /* screenfree_writer.xcdatamodeld in Sources */,
 				B75C64382D83300000BB5561 /* ContentView.swift in Sources */,
 				B75C643B2D83300000BB5561 /* NewChapterView.swift in Sources */,
@@ -573,7 +573,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "louisezhu.screenfree-writer";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -613,7 +614,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "louisezhu.screenfree-writer";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -748,6 +750,26 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
+		B7589CCE2D8588F900B99122 /* screenfree_writer.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B7589CD02D8588F900B99122 /* screenfree_writer.xcdatamodel */,
+			);
+			currentVersion = B7589CD02D8588F900B99122 /* screenfree_writer.xcdatamodel */;
+			path = screenfree_writer.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		B7589CCF2D8588F900B99122 /* ScreenFreeWriter.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				B7589CD12D8588F900B99122 /* ScreenFreeWriter.xcdatamodel */,
+			);
+			currentVersion = B7589CD12D8588F900B99122 /* ScreenFreeWriter.xcdatamodel */;
+			path = ScreenFreeWriter.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
 		B75C64252D832FFF00BB5561 /* ScreenFreeWriter.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (

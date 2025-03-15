@@ -1,9 +1,12 @@
 import Foundation
+import Security
 
 // 原来的AutoCorrectService重命名为PyCorrectService以区分不同的实现
 class PyCorrectService: AutoCorrectServiceProtocol {
     static let shared = PyCorrectService()
-    private let apiKey = "9667e284-a981-4366-b39c-ff5ab943fb97"
+    private var apiKey: String {
+        return AppSettings.shared.getSecureAPIKey() ?? ""
+    }
     private let baseURL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
     
     private init() {}
@@ -193,5 +196,62 @@ struct APIError: Codable, Error {
         let message: String
         let type: String
         let code: String
+    }
+}
+
+// 添加KeychainManager类
+class KeychainManager {
+    static let shared = KeychainManager()
+    
+    private init() {}
+    
+    // 从Keychain获取API密钥
+    func getAPIKey() -> String? {
+        // 第一次使用时，尝试从Info.plist加载并存储到Keychain
+        if let apiKey = retrieveAPIKey(), !apiKey.isEmpty {
+            return apiKey
+        } else if let apiKeyFromPlist = Bundle.main.infoDictionary?["API_KEY"] as? String, 
+                  !apiKeyFromPlist.isEmpty {
+            // 存储到Keychain
+            storeAPIKey(apiKeyFromPlist)
+            return apiKeyFromPlist
+        }
+        return nil
+    }
+    
+    // 存储API密钥到Keychain
+    func storeAPIKey(_ apiKey: String) {
+        let keychainQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: "ApiKey",
+            kSecAttrService as String: "com.screenfree.writer",
+            kSecValueData as String: apiKey.data(using: .utf8)!
+        ]
+        
+        // 先删除可能存在的旧值
+        SecItemDelete(keychainQuery as CFDictionary)
+        
+        // 添加新值
+        SecItemAdd(keychainQuery as CFDictionary, nil)
+    }
+    
+    // 从Keychain读取API密钥
+    func retrieveAPIKey() -> String? {
+        let keychainQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: "ApiKey",
+            kSecAttrService as String: "com.screenfree.writer",
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var dataTypeRef: AnyObject?
+        let status = SecItemCopyMatching(keychainQuery as CFDictionary, &dataTypeRef)
+        
+        if status == errSecSuccess, let retrievedData = dataTypeRef as? Data {
+            return String(data: retrievedData, encoding: .utf8)
+        }
+        
+        return nil
     }
 } 

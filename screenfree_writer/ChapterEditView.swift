@@ -2,13 +2,61 @@ import SwiftUI
 import UIKit
 import Foundation
 
+// 创建UITextView的子类以自定义输入附件视图
+class NoAccessoryTextView: UITextView {
+    // 不覆盖inputAccessoryView属性，而是通过初始化后再处理
+    override init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        
+        // 在初始化后，使用私有API方法清除输入附件视图
+        // 通过KVC绕过公共API的限制
+        setValue(nil, forKey: "_inputAccessoryView")
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        
+        // 同样在这个初始化方法中也清除
+        setValue(nil, forKey: "_inputAccessoryView")
+    }
+    
+    // 此属性会被iOS用来确定是否有inputAccessoryView
+    override var inputAccessoryViewController: UIInputViewController? {
+        return nil
+    }
+    
+    // 请求重新加载输入视图，例如当键盘出现时
+    override var textInputMode: UITextInputMode? {
+        // 通过重写此方法使系统认为没有改变输入模式
+        return super.textInputMode
+    }
+    
+    // 重写此方法，使系统认为没有输入附件视图
+    override func reloadInputViews() {
+        // 在重新加载之前再次确保清除
+        setValue(nil, forKey: "_inputAccessoryView")
+        super.reloadInputViews()
+    }
+}
+
 struct CustomTextEditor: UIViewRepresentable {
     @Binding var text: String
     @Binding var selectedRange: NSRange
     var suggestions: [Suggestion]
     
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+        // 使用我们的自定义UITextView子类，并设置适当的frame和textContainer
+        let textStorage = NSTextStorage()
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: .zero)
+        
+        // 配置文本容器
+        textContainer.widthTracksTextView = true
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        
+        // 创建我们的自定义UITextView
+        let textView = NoAccessoryTextView(frame: .zero, textContainer: textContainer)
         textView.delegate = context.coordinator
         textView.font = .systemFont(ofSize: 16)
         textView.backgroundColor = UIColor(AppTheme.cardBackground)
@@ -21,6 +69,30 @@ struct CustomTextEditor: UIViewRepresentable {
         textView.smartQuotesType = .no // 关闭智能引号
         textView.smartDashesType = .no // 关闭智能破折号
         textView.smartInsertDeleteType = .no // 关闭智能插入删除
+        
+        // 禁用系统输入助手视图
+        if #available(iOS 14.0, *) {
+            textView.inputAssistantItem.leadingBarButtonGroups = []
+            textView.inputAssistantItem.trailingBarButtonGroups = []
+        }
+        
+        // 自定义输入键盘属性
+        textView.keyboardDismissMode = .interactive
+        textView.keyboardType = .default
+        textView.returnKeyType = .default
+        
+        // 在多设备和多版本iOS上进一步确保无输入附件视图
+        if let window = UIApplication.shared.windows.first {
+            try? textView.perform(Selector(("_updateInputAccessoryView")))
+            DispatchQueue.main.async {
+                // 在下一个主循环重新加载输入视图，确保清除任何自动创建的附件视图
+                textView.reloadInputViews()
+                
+                // 使用正确的方法强制布局更新
+                window.rootViewController?.view.setNeedsLayout()
+                window.rootViewController?.view.layoutIfNeeded()
+            }
+        }
         
         // 设置初始文本和光标位置
         textView.text = text
@@ -258,6 +330,39 @@ struct CustomTextEditor: UIViewRepresentable {
                 parent.selectedRange = textView.selectedRange
             }
         }
+        
+        // 设置和取消第一响应者时的处理
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            // 确保光标位置有效
+            if textView.selectedRange.location > textView.text.count {
+                textView.selectedRange = NSRange(location: textView.text.count, length: 0)
+            }
+            
+            // 在文本视图获得焦点时清理可能的约束冲突
+            DispatchQueue.main.async {
+                // 获取根视图控制器并清理键盘约束
+                if let window = UIApplication.shared.windows.first,
+                   let rootView = window.rootViewController?.view {
+                    rootView.cleanupKeyboardConstraints()
+                }
+                
+                // 再次确保没有输入附件视图
+                textView.setValue(nil, forKey: "_inputAccessoryView")
+                textView.reloadInputViews()
+            }
+            
+            // 在Debug模式下监控约束变化
+            #if DEBUG
+            textView.monitorKeyboardConstraints()
+            #endif
+        }
+        
+        func textViewDidEndEditing(_ textView: UITextView) {
+            // 在失去焦点时执行清理工作
+            #if DEBUG
+            NotificationCenter.default.removeObserver(textView)
+            #endif
+        }
     }
 }
 
@@ -283,6 +388,7 @@ struct ChapterEditView: View {
     @State private var currentTextIsPerfect: Bool = false
     @State private var checkTextTask: Task<Void, Never>? = nil
     @State private var isTyping: Bool = false
+    @State private var keyboardHeight: CGFloat = 0
     let chapter: ChapterEntity
     
     var body: some View {
@@ -312,7 +418,7 @@ struct ChapterEditView: View {
                         .onChange(of: content) { newValue in
                             // 更新章节内容和更新时间
                             chapter.updatedAt = Date()
-                        viewModel.updateChapter(chapter, content: newValue)
+                            viewModel.updateChapter(chapter, content: newValue)
                             if !searchText.isEmpty {
                                 findMatches()
                             }
@@ -341,6 +447,8 @@ struct ChapterEditView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
+                        // 添加额外的底部 padding 以避免键盘遮挡
+                        .padding(.bottom, keyboardHeight > 0 ? keyboardHeight : 0)
                 }
                 .background(AppTheme.background)
                 
@@ -386,7 +494,7 @@ struct ChapterEditView: View {
                                 .foregroundColor(AppTheme.secondaryText)
                         }
                     
-                    Button(action: { showingSidebar.toggle() }) {
+                        Button(action: { showingSidebar.toggle() }) {
                             Image(systemName: "checkmark.bubble")
                                 .foregroundColor(!suggestions.isEmpty ? AppTheme.accent : AppTheme.primary)
                         }
@@ -420,6 +528,7 @@ struct ChapterEditView: View {
         .navigationTitle(chapter.title ?? "未命名")
         .navigationBarTitleDisplayMode(.inline)
         .background(AppTheme.background)
+        .ignoresSafeArea(.keyboard, edges: .bottom) // 防止键盘影响布局
         .onAppear {
             content = chapter.content ?? ""
             previousContentLength = content.count
@@ -432,11 +541,36 @@ struct ChapterEditView: View {
             Task {
                 await checkText()
             }
+            
+            // 添加键盘通知监听器，使用主线程更新UI
+            NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { [self] notification in
+                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        self.keyboardHeight = keyboardFrame.height
+                    }
+                }
+            }
+            
+            NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { [self] _ in
+                withAnimation(.easeOut(duration: 0.3)) {
+                    self.keyboardHeight = 0
+                }
+            }
         }
         .onDisappear {
             undoManager?.removeAllActions()
             checkTextTask?.cancel()
+            
+            // 移除键盘通知监听器
+            NotificationCenter.default.removeObserver(self)
         }
+        // 添加轻触手势来关闭键盘
+        .gesture(
+            TapGesture()
+                .onEnded { _ in
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+        )
     }
     
     private func checkText() async {
@@ -1002,6 +1136,80 @@ struct SuggestionRow: View {
                 .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
         .id(suggestion.id) // 添加稳定 ID 避免重新渲染时消失
+    }
+}
+
+// 添加一个UITextView扩展，用于调试和辅助功能
+extension UITextView {
+    override open var canBecomeFirstResponder: Bool {
+        // 确保文本视图可以成为第一响应者（获取焦点）
+        return true
+    }
+    
+    override open var canResignFirstResponder: Bool {
+        // 确保文本视图可以放弃第一响应者状态（失去焦点）
+        return true
+    }
+    
+    // 监听约束冲突的方法，仅在开发阶段会被使用
+    #if DEBUG
+    func monitorKeyboardConstraints() {
+        NotificationCenter.default.addObserver(self, selector: #selector(constraintsDidChange), 
+                                              name: NSNotification.Name("UIViewControllerConstraintsDidChangeNotification"), 
+                                              object: nil)
+    }
+    
+    @objc private func constraintsDidChange() {
+        // 收集可能存在冲突的约束
+        var keyboardConstraints: [NSLayoutConstraint] = []
+        
+        if let window = self.window {
+            // 查找包含"keyboard"、"input"、"accessory"关键词的约束
+            func findKeyboardConstraints(in view: UIView) {
+                for constraint in view.constraints {
+                    let description = constraint.description.lowercased()
+                    if description.contains("keyboard") || 
+                       description.contains("input") ||
+                       description.contains("accessory") {
+                        keyboardConstraints.append(constraint)
+                    }
+                }
+                
+                for subview in view.subviews {
+                    findKeyboardConstraints(in: subview)
+                }
+            }
+            
+            findKeyboardConstraints(in: window)
+        }
+        
+        // 如果找到冲突的约束，可以在控制台打印
+        if !keyboardConstraints.isEmpty {
+            print("Potential keyboard constraint conflicts: \(keyboardConstraints.count)")
+        }
+    }
+    #endif
+}
+
+// 添加UIView扩展以处理约束冲突
+extension UIView {
+    // 清理相关的约束冲突
+    func cleanupKeyboardConstraints() {
+        // 查找与键盘相关的约束
+        let constraintsToRemove = constraints.filter { constraint in
+            let description = constraint.description.lowercased()
+            return description.contains("keyboard") || 
+                   description.contains("inputaccessory") || 
+                   description.contains("inputassistant")
+        }
+        
+        // 停用这些约束
+        NSLayoutConstraint.deactivate(constraintsToRemove)
+        
+        // 递归处理子视图
+        for subview in subviews {
+            subview.cleanupKeyboardConstraints()
+        }
     }
 }
 
