@@ -688,7 +688,7 @@ struct ChapterEditView: View {
             
             // 创建一个检测任务，并赋予它一个变量，这样可以在任务取消时捕获到
             let task = Task {
-                try await AutoCorrectServiceFactory.getService().checkText(segmentToCheck)
+                try await DoubaoCorrectService.checkText(segmentToCheck)
             }
             
             // 设置一个超时控制

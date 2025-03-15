@@ -8,7 +8,6 @@ import UIKit
 struct ProfileView: View {
     @StateObject private var viewModel = BookViewModel()
     @State private var enableTextCorrection: Bool = AppSettings.shared.enableTextCorrection
-    @State private var textCorrectionService: TextCorrectionServiceType = AppSettings.shared.textCorrectionService
     
     var body: some View {
         NavigationStack {
@@ -117,41 +116,6 @@ struct ProfileView: View {
                             
                             Divider()
                                 .padding(.leading, 56)
-                                
-                            // 文本修正服务选择
-                            if enableTextCorrection {
-                                HStack {
-                                    Image(systemName: "gear.circle")
-                                        .foregroundColor(AppTheme.primary)
-                                        .frame(width: 30)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("修正服务")
-                                            .foregroundColor(AppTheme.text)
-                                        
-                                        Text("选择文本修正引擎")
-                                            .font(.caption)
-                                            .foregroundColor(AppTheme.secondaryText)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Picker("", selection: $textCorrectionService) {
-                                        Text("在线API").tag(TextCorrectionServiceType.doubao)
-                                        Text("本地模型").tag(TextCorrectionServiceType.deepseek)
-                                    }
-                                    .pickerStyle(SegmentedPickerStyle())
-                                    .frame(width: 160)
-                                    .onChange(of: textCorrectionService) { newValue in
-                                        AppSettings.shared.textCorrectionService = newValue
-                                    }
-                                }
-                                .padding(.vertical, 14)
-                                .padding(.horizontal)
-                                
-                                Divider()
-                                    .padding(.leading, 56)
-                    }
                     
                     NavigationLink(destination: Text("快捷键设置")) {
                                 SettingRow(title: "快捷键设置", icon: "keyboard", showDivider: true)

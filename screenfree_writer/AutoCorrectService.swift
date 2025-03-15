@@ -1,9 +1,8 @@
 import Foundation
 import Security
 
-// 原来的AutoCorrectService重命名为PyCorrectService以区分不同的实现
-class PyCorrectService: AutoCorrectServiceProtocol {
-    static let shared = PyCorrectService()
+class DoubaoCorrectService {
+    static let shared = DoubaoCorrectService()
     private var apiKey: String {
         return AppSettings.shared.getSecureAPIKey() ?? ""
     }
@@ -11,7 +10,7 @@ class PyCorrectService: AutoCorrectServiceProtocol {
     
     private init() {}
     
-    func checkText(_ text: String) async throws -> [Suggestion] {
+    static func checkText(_ text: String) async throws -> [Suggestion] {
         let prompt = """
         请仔细检查以下文本，找出可能的别字和用词不当的地方。表达不准确的不需要修改。请只针对有问题的具体词语提供修改建议，不要修改整句。"original" 字段必须是原文中确实存在的词语或短语，可以在文本中精确找到        
         如果文本没有任何问题，请返回如下 JSON：{"status": "perfect","message": "文本没有任何问题"}
@@ -28,13 +27,13 @@ class PyCorrectService: AutoCorrectServiceProtocol {
             "temperature": 0.7
         ]
         
-        guard let url = URL(string: baseURL) else {
+        guard let url = URL(string: shared.baseURL) else {
             throw URLError(.badURL)
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(shared.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
@@ -87,7 +86,7 @@ class PyCorrectService: AutoCorrectServiceProtocol {
                 }
                 
                 // 从内容中提取JSON，并转换为建议
-                return try self.extractSuggestionsFromContent(content)
+                return try extractSuggestionsFromContent(content)
             }
             
             // 等待并返回结果
@@ -95,7 +94,7 @@ class PyCorrectService: AutoCorrectServiceProtocol {
         }
     }
     
-    private func extractSuggestionsFromContent(_ content: String) throws -> [Suggestion] {
+    private static func extractSuggestionsFromContent(_ content: String) throws -> [Suggestion] {
         // 从文本中识别和提取JSON
         guard let jsonData = findJSONInString(content) else {
             throw NSError(domain: "com.screenfree.writer", code: 1002, 
@@ -115,7 +114,7 @@ class PyCorrectService: AutoCorrectServiceProtocol {
         return doubaoResponse.suggestions ?? []
     }
     
-    private func findJSONInString(_ text: String) -> Data? {
+    private static func findJSONInString(_ text: String) -> Data? {
         let pattern = "\\{[^{]*?\"status\"\\s*:\\s*\"[^\"]*\"[^}]*\\}"
         
         do {
@@ -134,17 +133,6 @@ class PyCorrectService: AutoCorrectServiceProtocol {
         }
         
         return nil
-    }
-}
-
-// 为了向后兼容，提供一个AutoCorrectService类，它使用工厂方法获取当前配置的服务
-class AutoCorrectService {
-    static let shared = AutoCorrectService()
-    
-    private init() {}
-    
-    func checkText(_ text: String) async throws -> [Suggestion] {
-        return try await AutoCorrectServiceFactory.getService().checkText(text)
     }
 }
 

@@ -42,11 +42,9 @@
 		B7A3783E2D8472480090C586 /* ScreenFreeWriter.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7A378392D8472480090C586 /* ScreenFreeWriter.xcdatamodeld */; };
 		B7A3783F2D8472480090C586 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B7A3783B2D8472480090C586 /* Assets.xcassets */; };
 		B7A378402D8472480090C586 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B7A3783C2D8472480090C586 /* Preview Content */; };
-		B7A378472D8479020090C586 /* AutoCorrectServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A378412D8479020090C586 /* AutoCorrectServiceProtocol.swift */; };
 		B7A378482D8479020090C586 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B7A378422D8479020090C586 /* Assets.xcassets */; };
 		B7A378492D8479020090C586 /* screenfree_writer.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B7A378432D8479020090C586 /* screenfree_writer.xcdatamodeld */; };
 		B7A3784A2D8479020090C586 /* Preview Content in Resources */ = {isa = PBXBuildFile; fileRef = B7A378452D8479020090C586 /* Preview Content */; };
-		B7A3784B2D8479020090C586 /* DeepseekCoreMLService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,11 +104,9 @@
 		B7A3783A2D8472480090C586 /* ScreenFreeWriter.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ScreenFreeWriter.xcdatamodel; sourceTree = "<group>"; };
 		B7A3783B2D8472480090C586 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B7A3783C2D8472480090C586 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
-		B7A378412D8479020090C586 /* AutoCorrectServiceProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoCorrectServiceProtocol.swift; sourceTree = "<group>"; };
 		B7A378422D8479020090C586 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B7A378442D8479020090C586 /* screenfree_writer.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = screenfree_writer.xcdatamodel; sourceTree = "<group>"; };
 		B7A378452D8479020090C586 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
-		B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepseekCoreMLService.swift; sourceTree = "<group>"; };
 		B7D465822D832B140042B162 /* screenfree_writer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = screenfree_writer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465992D832B170042B162 /* screenfree_writerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D465A32D832B170042B162 /* screenfree_writerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = screenfree_writerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -170,7 +166,6 @@
 				B75C642B2D83300000BB5561 /* Assets.xcassets */,
 				B75C64202D832FFF00BB5561 /* BookDetailView.swift */,
 				B77D89AC2D833C4F005D2209 /* Assets.xcassets */,
-				B7A378462D8479020090C586 /* DeepseekCoreMLService.swift */,
 				B77D89AD2D833C4F005D2209 /* Preview Content */,
 				B77D89C32D834CE0005D2209 /* Assets.xcassets */,
 				B77D89C52D834CE0005D2209 /* Preview Content */,
@@ -181,7 +176,6 @@
 				B78E98192D84720800D319F8 /* AppSettings.swift */,
 				B78E98182D84720800D319F8 /* AutoCorrectService.swift */,
 				B7A378422D8479020090C586 /* Assets.xcassets */,
-				B7A378412D8479020090C586 /* AutoCorrectServiceProtocol.swift */,
 				B7A378432D8479020090C586 /* screenfree_writer.xcdatamodeld */,
 				B77D89A72D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld */,
 				B77D89B52D834658005D2209 /* Assets.xcassets */,
@@ -387,8 +381,6 @@
 				B77D89AE2D833C4F005D2209 /* ScreenFreeWriter.xcdatamodeld in Sources */,
 				B75C643F2D83300000BB5561 /* NewBookView.swift in Sources */,
 				B78E981B2D84720900D319F8 /* AppSettings.swift in Sources */,
-				B7A378472D8479020090C586 /* AutoCorrectServiceProtocol.swift in Sources */,
-				B7A3784B2D8479020090C586 /* DeepseekCoreMLService.swift in Sources */,
 				B75C64352D83300000BB5561 /* BookDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

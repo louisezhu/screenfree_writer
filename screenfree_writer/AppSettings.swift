@@ -1,10 +1,5 @@
 import Foundation
 
-// 文本修正服务类型
-enum TextCorrectionServiceType: String {
-    case doubao = "doubao" // 原有的Python修正服务
-    case deepseek = "deepseek" // 新的CoreML模型服务
-}
 
 // 创建AppSettings单例来管理应用设置
 class AppSettings {
@@ -14,7 +9,6 @@ class AppSettings {
     // 定义设置键
     private enum Keys {
         static let enableTextCorrection = "enableTextCorrection"
-        static let textCorrectionService = "textCorrectionService"
     }
     
     // 是否启用文本修正功能
@@ -25,20 +19,6 @@ class AppSettings {
         }
         set {
             defaults.set(newValue, forKey: Keys.enableTextCorrection)
-        }
-    }
-    
-    // 当前使用的文本修正服务类型
-    var textCorrectionService: TextCorrectionServiceType {
-        get {
-            if let rawValue = defaults.string(forKey: Keys.textCorrectionService),
-               let serviceType = TextCorrectionServiceType(rawValue: rawValue) {
-                return serviceType
-            }
-            return .doubao // 默认使用python修正服务
-        }
-        set {
-            defaults.set(newValue.rawValue, forKey: Keys.textCorrectionService)
         }
     }
     
@@ -66,10 +46,6 @@ class AppSettings {
         // 确保默认设置
         if defaults.object(forKey: Keys.enableTextCorrection) == nil {
             enableTextCorrection = true
-        }
-        
-        if defaults.object(forKey: Keys.textCorrectionService) == nil {
-            textCorrectionService = .doubao
         }
         
         // 第一次运行时，尝试从Info.plist导入API密钥到Keychain
