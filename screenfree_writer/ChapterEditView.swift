@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import Foundation
+import AVFoundation
 
 // 创建UITextView的子类以自定义输入附件视图
 class NoAccessoryTextView: UITextView {
@@ -416,6 +417,11 @@ struct ChapterEditView: View {
     @State private var checkTextTask: Task<Void, Never>? = nil
     @State private var isTyping: Bool = false
     @State private var keyboardHeight: CGFloat = 0
+    // 语音朗读相关
+    @State private var speechSynthesizer = AVSpeechSynthesizer()
+    @State private var isReadingSuggestions = false
+    @State private var currentSuggestionIndex = 0
+    @State private var activeSuggestions: [Suggestion] = []
     let chapter: ChapterEntity
     
     var body: some View {
@@ -476,6 +482,33 @@ struct ChapterEditView: View {
                         .padding(.vertical, 12)
                         // 添加额外的底部 padding 以避免键盘遮挡
                         .padding(.bottom, keyboardHeight > 0 ? keyboardHeight : 0)
+                    
+                    // 隐藏的快捷键按钮
+                    VStack {
+                        // 触发语音朗读的按钮
+                        Button(action: toggleSpeechReading) {
+                            Text("")
+                        }
+                        .keyboardShortcut("V", modifiers: [.command, .shift])
+                        .frame(width: 0, height: 0)
+                        .opacity(0)
+                        
+                        // 接受当前建议的按钮
+                        Button(action: acceptCurrentSuggestion) {
+                            Text("")
+                        }
+                        .keyboardShortcut("Y", modifiers: [.command])
+                        .frame(width: 0, height: 0)
+                        .opacity(0)
+                        
+                        // 忽略当前建议的按钮
+                        Button(action: ignoreCurrentSuggestion) {
+                            Text("")
+                        }
+                        .keyboardShortcut("N", modifiers: [.command])
+                        .frame(width: 0, height: 0)
+                        .opacity(0)
+                    }
                 }
                 .background(AppTheme.background)
                 
@@ -540,6 +573,8 @@ struct ChapterEditView: View {
                     acceptedSuggestions: $acceptedSuggestions,
                     content: $content,
                     checkedParagraphs: $checkedParagraphs,
+                    isReadingSuggestions: $isReadingSuggestions,
+                    currentSuggestionIndex: $currentSuggestionIndex,
                     currentTextIsPerfect: currentTextIsPerfect,
                     chapter: chapter
                 )
@@ -589,6 +624,11 @@ struct ChapterEditView: View {
                     self.keyboardHeight = 0
                 }
             }
+            
+            // 设置语音合成器代理以监听朗读状态
+            speechSynthesizer.delegate = SpeechSynthesizerDelegate(onFinishSpeaking: {
+                self.handleFinishSpeakingSuggestion()
+            })
         }
         .onDisappear {
             undoManager?.removeAllActions()
@@ -808,6 +848,220 @@ struct ChapterEditView: View {
         
         return "" // 如果没有找到非空段落，返回空字符串
     }
+    
+    // 切换语音朗读状态
+    private func toggleSpeechReading() {
+        if isReadingSuggestions {
+            stopSpeechReading()
+        } else {
+            startSpeechReading()
+        }
+    }
+    
+    // 开始语音朗读
+    private func startSpeechReading() {
+        // 停止任何正在进行的朗读
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        
+        // 获取过滤后的、未被接受的建议
+        activeSuggestions = suggestions.filter { !acceptedSuggestions.contains($0.id) }
+        
+        if activeSuggestions.isEmpty {
+            // 如果没有建议，朗读提示信息
+            speakText("没有找到需要修正的内容")
+            return
+        }
+        
+        isReadingSuggestions = true
+        currentSuggestionIndex = 0
+        
+        // 显示侧边栏以便查看建议
+        if !showingSidebar {
+            showingSidebar = true
+        }
+        
+        // 朗读第一个建议
+        speakCurrentSuggestion()
+    }
+    
+    // 停止语音朗读
+    private func stopSpeechReading() {
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        isReadingSuggestions = false
+    }
+    
+    // 朗读当前建议
+    private func speakCurrentSuggestion() {
+        guard isReadingSuggestions, 
+              currentSuggestionIndex < activeSuggestions.count else {
+            isReadingSuggestions = false
+            return
+        }
+        
+        let suggestion = activeSuggestions[currentSuggestionIndex]
+        let textToSpeak = "原文：\(suggestion.original)，建议修改为：\(suggestion.suggestion)，原因：\(suggestion.reason)。按Shift+Command+Y接受，Shift+Command+N忽略。"
+        
+        speakText(textToSpeak)
+    }
+    
+    // 朗读完一个建议后的处理
+    private func handleFinishSpeakingSuggestion() {
+        // 如果不再处于朗读状态，则不继续
+        guard isReadingSuggestions else { return }
+        
+        // 等待短暂时间，让用户有时间思考
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+            guard self.isReadingSuggestions else { return }
+            
+            // 移动到下一个建议
+            self.currentSuggestionIndex += 1
+            
+            if self.currentSuggestionIndex < self.activeSuggestions.count {
+                // 还有更多建议，继续朗读
+                self.speakCurrentSuggestion()
+            } else {
+                // 所有建议都已朗读完毕
+                self.speakText("所有建议已朗读完毕")
+                self.isReadingSuggestions = false
+            }
+        }
+    }
+    
+    // 接受当前建议
+    private func acceptCurrentSuggestion() {
+        guard isReadingSuggestions, 
+              currentSuggestionIndex < activeSuggestions.count else { return }
+        
+        let suggestion = activeSuggestions[currentSuggestionIndex]
+        
+        // 停止当前朗读
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        
+        // 执行替换操作
+        applySuggestion(suggestion)
+        
+        // 标记为已接受
+        acceptedSuggestions.insert(suggestion.id)
+        
+        // 朗读确认信息
+        speakText("已接受建议")
+        
+        // 移动到下一个建议
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+            guard self.isReadingSuggestions else { return }
+            
+            // 更新活跃建议列表
+            self.activeSuggestions = self.suggestions.filter { !self.acceptedSuggestions.contains($0.id) }
+            
+            // 如果当前索引超出范围，重置为0
+            if self.currentSuggestionIndex >= self.activeSuggestions.count {
+                self.currentSuggestionIndex = 0
+            }
+            
+            if self.activeSuggestions.isEmpty {
+                self.speakText("所有建议已处理完毕")
+                self.isReadingSuggestions = false
+            } else {
+                self.speakCurrentSuggestion()
+            }
+        }
+    }
+    
+    // 忽略当前建议
+    private func ignoreCurrentSuggestion() {
+        guard isReadingSuggestions, 
+              currentSuggestionIndex < activeSuggestions.count else { return }
+        
+        let suggestion = activeSuggestions[currentSuggestionIndex]
+        
+        // 停止当前朗读
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        
+        // 标记为已忽略
+        acceptedSuggestions.insert(suggestion.id)
+        
+        // 朗读确认信息
+        speakText("已忽略建议")
+        
+        // 移动到下一个建议
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+            guard self.isReadingSuggestions else { return }
+            
+            // 更新活跃建议列表
+            self.activeSuggestions = self.suggestions.filter { !self.acceptedSuggestions.contains($0.id) }
+            
+            // 如果当前索引超出范围，重置为0
+            if self.currentSuggestionIndex >= self.activeSuggestions.count {
+                self.currentSuggestionIndex = 0
+            }
+            
+            if self.activeSuggestions.isEmpty {
+                self.speakText("所有建议已处理完毕")
+                self.isReadingSuggestions = false
+            } else {
+                self.speakCurrentSuggestion()
+            }
+        }
+    }
+    
+    // 应用建议修改
+    private func applySuggestion(_ suggestion: Suggestion) {
+        if !suggestion.contextText.isEmpty {
+            // 使用上下文信息限制替换范围
+            let segmentStartIndex = max(0, suggestion.contextStartPosition)
+            let segmentEndIndex = min(content.count, segmentStartIndex + suggestion.contextText.count)
+            
+            if segmentStartIndex < segmentEndIndex && segmentEndIndex <= content.count {
+                // 获取段落文本
+                let segmentText = String(content[content.index(content.startIndex, offsetBy: segmentStartIndex)..<content.index(content.startIndex, offsetBy: segmentEndIndex)])
+                
+                // 在段落中查找原始文本
+                if let range = segmentText.range(of: suggestion.original) {
+                    // 计算在完整文本中的位置
+                    let fullTextStartIndex = content.index(content.startIndex, offsetBy: segmentStartIndex)
+                    let actualStartIndex = content.index(fullTextStartIndex, offsetBy: range.lowerBound.utf16Offset(in: segmentText))
+                    let actualEndIndex = content.index(fullTextStartIndex, offsetBy: range.upperBound.utf16Offset(in: segmentText))
+                    
+                    // 替换文本
+                    var newContent = content
+                    newContent.replaceSubrange(actualStartIndex..<actualEndIndex, with: suggestion.suggestion)
+                    content = newContent
+                }
+            }
+        } else {
+            // 向后兼容：如果没有上下文信息，使用原来的方法
+            if let range = content.range(of: suggestion.original) {
+                var newContent = content
+                newContent.replaceSubrange(range, with: suggestion.suggestion)
+                content = newContent
+            }
+        }
+    }
+    
+    // 基本文本朗读功能
+    private func speakText(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN") // 使用中文语音
+        utterance.rate = 0.5 // 语速适中
+        utterance.pitchMultiplier = 1.0
+        utterance.volume = 1.0
+        
+        speechSynthesizer.speak(utterance)
+    }
+}
+
+// 语音合成器代理类
+class SpeechSynthesizerDelegate: NSObject, AVSpeechSynthesizerDelegate {
+    let onFinishSpeaking: () -> Void
+    
+    init(onFinishSpeaking: @escaping () -> Void) {
+        self.onFinishSpeaking = onFinishSpeaking
+        super.init()
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        onFinishSpeaking()
+    }
 }
 
 struct SearchToolbar: View {
@@ -954,6 +1208,8 @@ struct SidebarView: View {
     @Binding var acceptedSuggestions: Set<UUID>
     @Binding var content: String
     @Binding var checkedParagraphs: Set<String>
+    @Binding var isReadingSuggestions: Bool
+    @Binding var currentSuggestionIndex: Int
     let currentTextIsPerfect: Bool
     let chapter: ChapterEntity
     
@@ -961,8 +1217,8 @@ struct SidebarView: View {
         VStack(spacing: 0) {
             // 标题栏
             HStack {
-            Text("修改建议")
-                .font(.headline)
+                Text("修改建议")
+                    .font(.headline)
                     .foregroundColor(AppTheme.text)
                 Spacer()
                 
@@ -981,6 +1237,21 @@ struct SidebarView: View {
                 .buttonStyle(BorderlessButtonStyle())
                 .help("重新检查所有内容")
                 
+                // 语音朗读指示器
+                if isReadingSuggestions {
+                    HStack(spacing: 4) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .foregroundColor(AppTheme.accent)
+                        Text("朗读中")
+                            .font(.caption)
+                            .foregroundColor(AppTheme.accent)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(AppTheme.accent.opacity(0.15))
+                    .cornerRadius(4)
+                }
+                
                 if isChecking {
                     ProgressView()
                         .scaleEffect(0.8)
@@ -990,6 +1261,60 @@ struct SidebarView: View {
             .padding(.horizontal, 16)
             .background(AppTheme.cardBackground)
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            
+            // 快捷键提示区域
+            if isReadingSuggestions {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("快捷键操作：")
+                        .font(.caption)
+                        .foregroundColor(AppTheme.text)
+                    
+                    HStack(spacing: 12) {
+                        HStack(spacing: 4) {
+                            Text("⇧⌘Y")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(4)
+                            
+                            Text("接受")
+                                .font(.caption)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Text("⇧⌘N")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(4)
+                            
+                            Text("忽略")
+                                .font(.caption)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Text("⇧⌘V")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(4)
+                            
+                            Text("停止")
+                                .font(.caption)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(0)
+            }
     
             // 内容区域
             if suggestions.isEmpty {
@@ -1030,13 +1355,18 @@ struct SidebarView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(suggestions.filter { !acceptedSuggestions.contains($0.id) }) { suggestion in
+                        ForEach(Array(suggestions.filter { !acceptedSuggestions.contains($0.id) }.enumerated()), id: \.element.id) { index, suggestion in
                             SuggestionRow(
                                 suggestion: suggestion,
                                 content: $content,
-                                acceptedSuggestions: $acceptedSuggestions
+                                acceptedSuggestions: $acceptedSuggestions,
+                                isCurrentlyReading: isReadingSuggestions && index == currentSuggestionIndex
                             )
-                            .background(AppTheme.cardBackground)
+                            .background(
+                                isReadingSuggestions && index == currentSuggestionIndex 
+                                ? AppTheme.accent.opacity(0.15) 
+                                : AppTheme.cardBackground
+                            )
                             .cornerRadius(10)
                             .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                             .padding(.horizontal, 8)
@@ -1054,6 +1384,7 @@ struct SuggestionRow: View {
     let suggestion: Suggestion
     @Binding var content: String
     @Binding var acceptedSuggestions: Set<UUID>
+    let isCurrentlyReading: Bool
     @State private var isExpanded = true  // 默认展开
     
     var body: some View {
@@ -1061,6 +1392,12 @@ struct SuggestionRow: View {
             // 标题栏 - 原始文本和展开/折叠按钮
             Button(action: { isExpanded.toggle() }) {
                 HStack {
+                    if isCurrentlyReading {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .foregroundColor(AppTheme.accent)
+                            .font(.system(size: 14))
+                    }
+                    
                     Text(suggestion.original)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(AppTheme.text)
@@ -1074,7 +1411,7 @@ struct SuggestionRow: View {
             .buttonStyle(PlainButtonStyle())
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(Color.clear)
+            .background(isCurrentlyReading ? AppTheme.accent.opacity(0.1) : Color.clear)
             
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
@@ -1085,7 +1422,7 @@ struct SuggestionRow: View {
                             .foregroundColor(AppTheme.secondaryText)
                         
                         Text(suggestion.suggestion)
-                .font(.body)
+                            .font(.body)
                             .foregroundColor(AppTheme.primary)
                             .padding(8)
                             .background(AppTheme.primary.opacity(0.1))
@@ -1147,24 +1484,24 @@ struct SuggestionRow: View {
                                 }
                             }
                         }) {
-                    Text("采纳")
+                            Text("采纳")
                                 .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
                                 .background(AppTheme.primary)
                                 .cornerRadius(6)
-                }
-                
+                        }
+                        
                         Button(action: {
                             // 标记为已忽略
                             acceptedSuggestions.insert(suggestion.id)
                         }) {
-                    Text("忽略")
+                            Text("忽略")
                                 .font(.system(size: 14))
                                 .foregroundColor(AppTheme.secondaryText)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(6)
                         }
@@ -1176,11 +1513,11 @@ struct SuggestionRow: View {
                 .padding(.bottom, 12)
             }
         }
-        .background(Color.white)
+        .background(isCurrentlyReading ? AppTheme.accent.opacity(0.05) : Color.white)
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                .stroke(isCurrentlyReading ? AppTheme.accent.opacity(0.5) : Color.gray.opacity(0.1), lineWidth: isCurrentlyReading ? 2 : 1)
         )
         .id(suggestion.id) // 添加稳定 ID 避免重新渲染时消失
     }
@@ -1202,8 +1539,8 @@ extension UITextView {
     #if DEBUG
     func monitorKeyboardConstraints() {
         NotificationCenter.default.addObserver(self, selector: #selector(constraintsDidChange), 
-                                              name: NSNotification.Name("UIViewControllerConstraintsDidChangeNotification"), 
-                                              object: nil)
+                                      name: NSNotification.Name("UIViewControllerConstraintsDidChangeNotification"), 
+                                      object: nil)
     }
     
     @objc private func constraintsDidChange() {
